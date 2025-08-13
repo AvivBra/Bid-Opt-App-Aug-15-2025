@@ -19,8 +19,8 @@ def render():
     # Tab header
     st.header(UPLOAD_HEADER)
 
-    # Create two columns
-    col1, col2 = layout.create_columns([1, 1])
+    # Create two columns with gap
+    col1, col2 = layout.create_columns([1, 1], gap="medium")
 
     # Left column - Files
     with col1:
@@ -99,20 +99,38 @@ def render():
                 "All requirements met! Switch to the 'Validate' tab to continue."
             )
 
-    # File status summary at bottom
+    # File status summary at bottom - wrapped in content container
     layout.add_vertical_space(2)
     layout.show_divider()
-    st.subheader("Upload Summary")
-    widgets.show_file_status(template_file, bulk_file)
 
-    # Debug info (only in mockup)
-    with st.expander("Debug Info (Mockup Only)", expanded=False):
-        st.write("Session State:")
-        st.write(
-            {
-                "Has Template": has_template,
-                "Has Bulk": has_bulk,
-                "Selected Optimizations": selected_optimizations,
-                "Can Proceed": SessionManager.can_proceed_to_step(2),
-            }
-        )
+    # Use content container to match the upper section layout
+    with layout.create_content_container():
+        st.subheader("Upload Summary")
+
+        # Use the same column layout with gap for the bottom section
+        bottom_col1, _, bottom_col2 = st.columns([1, 0.2, 1])  # Added gap column
+
+        with bottom_col1:
+            if template_file:
+                st.info("**Template:** Uploaded")
+            else:
+                st.info("**Template:** Not uploaded")
+
+        with bottom_col2:
+            if bulk_file:
+                st.info("**Bulk File:** Uploaded")
+            else:
+                st.info("**Bulk File:** Not uploaded")
+
+        # Debug info (only in mockup)
+        layout.add_vertical_space(1)
+        with st.expander("Debug Info (Mockup Only)", expanded=False):
+            st.write("Session State:")
+            st.write(
+                {
+                    "Has Template": has_template,
+                    "Has Bulk": has_bulk,
+                    "Selected Optimizations": selected_optimizations,
+                    "Can Proceed": SessionManager.can_proceed_to_step(2),
+                }
+            )

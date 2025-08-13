@@ -31,17 +31,17 @@ def main():
     # Show header
     layout.show_header()
 
-    # Create tabs
-    tabs = st.tabs([TAB_UPLOAD, TAB_VALIDATE, TAB_OUTPUT])
+    # Create tabs - Streamlit handles tab switching automatically
+    tab1, tab2, tab3 = st.tabs([TAB_UPLOAD, TAB_VALIDATE, TAB_OUTPUT])
 
-    # Render each tab
-    with tabs[0]:
+    # Render each tab content
+    with tab1:
         upload_tab.render()
 
-    with tabs[1]:
+    with tab2:
         validate_tab.render()
 
-    with tabs[2]:
+    with tab3:
         output_tab.render()
 
     # Footer (optional)

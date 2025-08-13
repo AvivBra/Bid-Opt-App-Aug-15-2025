@@ -20,13 +20,10 @@ def file_uploader(
     uploaded_file = st.file_uploader(label, type=accept_types, key=key, help=help_text)
 
     if uploaded_file is not None:
-        # Show file info
-        col1, col2 = st.columns([3, 1])
-        with col1:
-            st.caption(f"{uploaded_file.name}")
-        with col2:
-            size_mb = uploaded_file.size / (1024 * 1024)
-            st.caption(f"Size: {size_mb:.2f} MB")
+        # Show file info without creating new columns
+        st.caption(
+            f"{uploaded_file.name} - Size: {uploaded_file.size / (1024 * 1024):.2f} MB"
+        )
 
     return uploaded_file
 
@@ -98,26 +95,23 @@ def optimization_selector() -> List[str]:
 
 def show_file_status(template_file: Optional[BytesIO], bulk_file: Optional[BytesIO]):
     """Show status of uploaded files"""
-    col1, col2 = st.columns(2)
+    # Don't create columns - just show the info
+    if template_file:
+        st.info("**Template:** Uploaded")
+    else:
+        st.info("**Template:** Not uploaded")
 
-    with col1:
-        if template_file:
-            st.info("**Template:** Uploaded")
-        else:
-            st.info("**Template:** Not uploaded")
-
-    with col2:
-        if bulk_file:
-            st.info("**Bulk File:** Uploaded")
-        else:
-            st.info("**Bulk File:** Not uploaded")
+    if bulk_file:
+        st.info("**Bulk File:** Uploaded")
+    else:
+        st.info("**Bulk File:** Not uploaded")
 
 
 def copy_to_clipboard_button(
-    text: str, button_label: str = "Copy to Clipboard"
+    text: str, button_label: str = "Copy to Clipboard", key: Optional[str] = None
 ) -> bool:
     """Create a copy to clipboard button"""
-    button_clicked = st.button(button_label, use_container_width=True)
+    button_clicked = st.button(button_label, use_container_width=True, key=key)
 
     if button_clicked:
         # Note: Actual clipboard functionality requires JavaScript
@@ -179,3 +173,16 @@ def show_step_indicator(current_step: int):
                 st.markdown(f"**{i}. {step_name}** [Current]")
             else:
                 st.markdown(f"{i}. {step_name}")
+
+
+def show_custom_metric(label: str, value: str or int):
+    """Display a custom styled metric"""
+    st.markdown(
+        f"""
+        <div class="metric-container">
+            <div class="metric-value">{value}</div>
+            <div class="metric-label">{label}</div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )

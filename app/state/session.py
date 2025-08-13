@@ -60,25 +60,25 @@ class SessionManager:
     @staticmethod
     def can_proceed_to_step(step: int) -> bool:
         """Check if user can proceed to given step"""
-        current_step = SessionManager.get(SessionKeys.CURRENT_STEP, 1)
-
         if step == 1:
             return True
 
         elif step == 2:
             # Can proceed to step 2 if files are uploaded and optimization selected
-            has_bulk = SessionManager.get(SessionKeys.BULK_FILE) is not None
-            has_template = SessionManager.get(SessionKeys.TEMPLATE_FILE) is not None
+            # Check in st.session_state directly
+            has_bulk = st.session_state.get(SessionKeys.BULK_FILE) is not None
+            has_template = st.session_state.get(SessionKeys.TEMPLATE_FILE) is not None
             has_optimization = (
-                len(SessionManager.get(SessionKeys.SELECTED_OPTIMIZATIONS, [])) > 0
+                len(st.session_state.get(SessionKeys.SELECTED_OPTIMIZATIONS, [])) > 0
             )
             return has_bulk and has_template and has_optimization
 
         elif step == 3:
             # Can proceed to step 3 if validation is complete
-            validation_results = SessionManager.get(SessionKeys.VALIDATION_RESULTS)
-            missing_portfolios = SessionManager.get(SessionKeys.MISSING_PORTFOLIOS, [])
-            return validation_results is not None and len(missing_portfolios) == 0
+            # For mockup, just check if step 2 requirements are met
+            can_do_step2 = SessionManager.can_proceed_to_step(2)
+            # In real app would check validation_results, for now just check step 2
+            return can_do_step2
 
         return False
 

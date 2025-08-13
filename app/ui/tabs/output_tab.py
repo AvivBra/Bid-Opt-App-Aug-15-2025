@@ -26,14 +26,16 @@ def render():
     # Tab header
     st.header(OUTPUT_HEADER)
 
-    # Get or set processing state
-    processing_state = SessionManager.get(SessionKeys.PROCESSING_STATE)
+    # Use centered content container - same width as Upload tab
+    with layout.create_content_container():
+        # Get or set processing state
+        processing_state = SessionManager.get(SessionKeys.PROCESSING_STATE)
 
-    # If not yet processed, start processing
-    if processing_state != ProcessingStates.COMPLETED:
-        process_optimizations()
-    else:
-        show_results()
+        # If not yet processed, start processing
+        if processing_state != ProcessingStates.COMPLETED:
+            process_optimizations()
+        else:
+            show_results()
 
 
 def process_optimizations():

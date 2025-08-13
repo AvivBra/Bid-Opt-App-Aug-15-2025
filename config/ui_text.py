@@ -9,7 +9,7 @@ TAB_VALIDATE = "Validate"
 TAB_OUTPUT = "Output"
 
 # Step 1 - Upload
-UPLOAD_HEADER = ""
+UPLOAD_HEADER = "Upload Files"
 TEMPLATE_DOWNLOAD_BUTTON = "Download Template"
 TEMPLATE_UPLOAD_LABEL = "Upload Template (xlsx/csv)"
 BULK_UPLOAD_LABEL = "Upload Bulk (xlsx/csv, sheet: Sponsored Products Campaigns)"
@@ -17,7 +17,7 @@ OPTIMIZATION_HEADER = "Select Optimization Types"
 OPTIMIZATION_ZERO_SALES = "Zero Sales"
 
 # Step 2 - Validate
-VALIDATE_HEADER = "Step 2: Validate Portfolios"
+VALIDATE_HEADER = "Validate Portfolios"
 VALIDATION_SUMMARY = "Validation Summary"
 MISSING_PORTFOLIOS_LABEL = "Missing Portfolios"
 EXCESS_PORTFOLIOS_LABEL = "Excess Portfolios"
@@ -28,7 +28,7 @@ CONTINUE_BUTTON = "Continue"
 BACK_BUTTON = "Back"
 
 # Step 3 - Output
-OUTPUT_HEADER = "Step 3: Optimization & Output"
+OUTPUT_HEADER = "Optimization & Output"
 PROCESSING_MESSAGE = "Processing optimizations..."
 DOWNLOAD_WORKING_FILE = "Download Working File"
 DOWNLOAD_CLEAN_FILE = "Download Clean File"

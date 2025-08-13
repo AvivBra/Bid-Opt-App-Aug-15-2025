@@ -1,16 +1,17 @@
-# UI Demo Specification
+# Mockup UI Specification
 
 ## Purpose
-Create a **visual-only prototype** to validate the UI design before implementing any business logic.
+Create a **functional mockup** to validate the complete flow and UI design before implementing optimization logic.
 
-## Demo File Structure
+## Mockup Structure
 ```
-ui_demo.py          # Single file for entire UI demo
-demo_data.py        # Hardcoded sample data
-requirements.txt    # Minimal: streamlit, pandas
+app/main.py              # Main entry point
+app/ui/tabs/*.py         # Tab implementations
+app/state/session.py     # State management
+config/*.py              # Configuration files
 ```
 
-## UI Demo Components
+## UI Mockup Components
 
 ### Global Settings
 ```python
@@ -45,9 +46,9 @@ st.subheader("Files")
 # Download Template Button
 st.download_button(
     label="📥 Download Template",
-    data=dummy_excel_bytes,
+    data=template_excel_bytes,
     file_name="template.xlsx",
-    help="Demo template for mockup only"
+    help="Download empty template file"
 )
 
 # Template Upload
@@ -103,7 +104,7 @@ st.metric("Missing Portfolios", "12")
 # Download completion template
 st.download_button(
     "📥 Download Completion Template",
-    data=dummy_completion_bytes,
+    data=completion_bytes,
     file_name="completion_template.xlsx"
 )
 ```
@@ -167,7 +168,7 @@ col1, col2, col3 = st.columns(3)
 with col1:
     st.download_button(
         "📥 Download Working File",
-        data=dummy_working_bytes,
+        data=working_bytes,
         file_name="Auto Optimized Bulk | Working | 2024-01-15 | 14-30.xlsx",
         type="primary"
     )
@@ -175,7 +176,7 @@ with col1:
 with col2:
     st.download_button(
         "📥 Download Clean File",
-        data=dummy_clean_bytes,
+        data=clean_bytes,
         file_name="Auto Optimized Bulk | Clean | 2024-01-15 | 14-30.xlsx",
         type="primary"
     )
@@ -186,11 +187,12 @@ with col3:
 
 ---
 
-## Demo Data (`demo_data.py`)
+## Mockup Data Management
 
 ```python
-# Dummy bytes for download buttons
-dummy_excel_bytes = create_dummy_excel()  # Returns BytesIO
+# Use existing example files for testing
+SAMPLE_BULK_FILE = "Bulk File Example.xlsx"
+SAMPLE_TEMPLATE_FILE = "Empty Template Example.xlsx"
 
 # Sample data for displays
 SAMPLE_PORTFOLIOS = [
@@ -225,6 +227,7 @@ SAMPLE_METRICS = {
 - **Success**: Green (#00CC00)
 - **Info**: Blue (#0068C9)
 - **Pink Notice**: Custom HTML (#FFE4E1 background)
+- **Primary Buttons**: Red (#ff2b2b) - as configured in config.toml
 
 ### Layout
 - Always use `layout="wide"`
@@ -232,24 +235,25 @@ SAMPLE_METRICS = {
 - Clear visual hierarchy
 
 ### Interactive Elements
-- Primary buttons: Blue, prominent
+- Primary buttons: Red, prominent
 - Secondary buttons: Gray, subtle
 - Disabled state: Grayed out
 
 ---
 
-## Demo Interactions (Simulated)
+## Mockup Interactions (Functional)
 
 1. **Tab Navigation**: Click to switch (built-in)
-2. **File Upload**: Visual only, no processing
-3. **Download Buttons**: Download dummy files
-4. **Checkboxes**: Visual state change only
-5. **Copy Button**: Show success message
-6. **New Processing**: Refresh page
+2. **File Upload**: Real file processing
+3. **Download Buttons**: Generate and download real files
+4. **Checkboxes**: Update session state
+5. **Copy Button**: Copy to clipboard functionality
+6. **New Processing**: Clear session and restart
+7. **Mockup Scenario Selector**: Test different validation scenarios (KEEP THIS!)
 
 ---
 
-## Testing the Demo
+## Testing the Mockup
 
 ### Desktop View
 - [ ] All elements visible
@@ -267,10 +271,16 @@ SAMPLE_METRICS = {
 - [ ] Fonts readable
 - [ ] Icons clear
 
+### Functional Testing
+- [ ] Real file upload/download
+- [ ] Session state management
+- [ ] Virtual Map functionality
+- [ ] Completion template loop
+
 ---
 
-## Next Steps After Approval
+## Next Steps After Mockup Completion
 
-1. **Approved?** → Proceed to Phase 2 (Infrastructure)
-2. **Changes needed?** → Update demo → Review again
-3. **Major changes?** → Update spec docs → Rebuild demo
+1. **Mockup complete?** → Test all scenarios
+2. **All scenarios work?** → Proceed to optimization logic
+3. **Issues found?** → Fix and retest

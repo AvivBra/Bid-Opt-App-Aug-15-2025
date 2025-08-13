@@ -25,53 +25,51 @@ def render():
     # Tab header
     st.header(VALIDATE_HEADER)
 
-    # File status summary
-    st.subheader(VALIDATION_SUMMARY)
-    template_file = SessionManager.get(SessionKeys.TEMPLATE_FILE)
-    bulk_file = SessionManager.get(SessionKeys.BULK_FILE)
-    widgets.show_file_status(template_file, bulk_file)
+    # Use centered content container - same width as Upload tab
+    with layout.create_content_container():
+        st.subheader(VALIDATION_SUMMARY)
 
-    layout.add_vertical_space(1)
-    layout.show_divider()
+        template_file = SessionManager.get(SessionKeys.TEMPLATE_FILE)
+        bulk_file = SessionManager.get(SessionKeys.BULK_FILE)
 
-    # Mock portfolio comparison (in real app, this would analyze files)
-    # For mockup, we'll simulate different scenarios
+        widgets.show_file_status(template_file, bulk_file)
 
-    # Scenario selector (mockup only)
-    with st.expander("Mockup Scenario Selector", expanded=True):
-        scenario = st.radio(
-            "Select validation scenario to demonstrate:",
-            [
-                "No Issues",
-                "Missing Portfolios",
-                "Excess Portfolios",
-                "Both Missing and Excess",
-            ],
-            key="validation_scenario",
-        )
+        layout.add_vertical_space(1)
 
-    layout.add_vertical_space(1)
+        # Mock portfolio comparison (in real app, this would analyze files)
+        # Scenario selector (mockup only)
+        with st.expander("Mockup Scenario Selector", expanded=True):
+            scenario = st.radio(
+                "Select validation scenario to demonstrate:",
+                [
+                    "No Issues",
+                    "Missing Portfolios",
+                    "Excess Portfolios",
+                    "Both Missing and Excess",
+                ],
+                key="validation_scenario",
+            )
 
-    # Process based on scenario
-    if scenario == "No Issues":
-        render_no_issues()
-    elif scenario == "Missing Portfolios":
-        render_missing_portfolios()
-    elif scenario == "Excess Portfolios":
-        render_excess_portfolios()
-    else:  # Both Missing and Excess
-        render_both_issues()
+        layout.add_vertical_space(1)
+        st.subheader("Portfolio Comparison Results")
+
+        # Process based on scenario
+        if scenario == "No Issues":
+            render_no_issues()
+        elif scenario == "Missing Portfolios":
+            render_missing_portfolios()
+        elif scenario == "Excess Portfolios":
+            render_excess_portfolios()
+        else:  # Both Missing and Excess
+            render_both_issues()
 
 
 def render_no_issues():
     """Render UI when there are no portfolio issues"""
     messages.show_success("Portfolio validation complete - no issues found!")
 
-    col1, col2 = st.columns(2)
-    with col1:
-        widgets.show_custom_metric("Missing Portfolios", "0")
-    with col2:
-        widgets.show_custom_metric("Excess Portfolios", "0")
+    widgets.show_custom_metric("Missing Portfolios", "0")
+    widgets.show_custom_metric("Excess Portfolios", "0")
 
     layout.add_vertical_space(2)
 
@@ -99,11 +97,8 @@ def render_missing_portfolios():
         f"Found {len(missing)} missing portfolios that need to be configured"
     )
 
-    col1, col2 = st.columns(2)
-    with col1:
-        widgets.show_custom_metric("Missing Portfolios", len(missing))
-    with col2:
-        widgets.show_custom_metric("Excess Portfolios", "0")
+    widgets.show_custom_metric("Missing Portfolios", len(missing))
+    widgets.show_custom_metric("Excess Portfolios", "0")
 
     layout.add_vertical_space(1)
 
@@ -127,26 +122,23 @@ def render_missing_portfolios():
         completion_df.to_excel(writer, index=False, sheet_name="Completion")
     buffer.seek(0)
 
-    col1, col2 = st.columns(2)
-    with col1:
-        widgets.download_button(
-            label=DOWNLOAD_COMPLETION_TEMPLATE,
-            data=buffer,
-            filename="completion_template.xlsx",
-            key="download_completion",
-        )
+    widgets.download_button(
+        label=DOWNLOAD_COMPLETION_TEMPLATE,
+        data=buffer,
+        filename="completion_template.xlsx",
+        key="download_completion",
+    )
 
-    with col2:
-        # Upload completed template
-        completed_file = widgets.file_uploader(
-            label=UPLOAD_COMPLETION_TEMPLATE, key="upload_completion"
-        )
+    # Upload completed template
+    completed_file = widgets.file_uploader(
+        label=UPLOAD_COMPLETION_TEMPLATE, key="upload_completion"
+    )
 
-        if completed_file:
-            # Mock validation - clear missing portfolios
-            SessionManager.set(SessionKeys.MISSING_PORTFOLIOS, [])
-            messages.show_success(SUCCESS_MESSAGES["COMPLETION_UPLOADED"])
-            st.rerun()
+    if completed_file:
+        # Mock validation - clear missing portfolios
+        SessionManager.set(SessionKeys.MISSING_PORTFOLIOS, [])
+        messages.show_success(SUCCESS_MESSAGES["COMPLETION_UPLOADED"])
+        st.rerun()
 
 
 def render_excess_portfolios():
@@ -157,11 +149,8 @@ def render_excess_portfolios():
 
     messages.show_warning(f"Found {len(excess)} excess portfolios in template")
 
-    col1, col2 = st.columns(2)
-    with col1:
-        widgets.show_custom_metric("Missing Portfolios", "0")
-    with col2:
-        widgets.show_custom_metric("Excess Portfolios", len(excess))
+    widgets.show_custom_metric("Missing Portfolios", "0")
+    widgets.show_custom_metric("Excess Portfolios", len(excess))
 
     layout.add_vertical_space(1)
 
@@ -196,11 +185,8 @@ def render_both_issues():
         f"Found {len(missing)} missing and {len(excess)} excess portfolios"
     )
 
-    col1, col2 = st.columns(2)
-    with col1:
-        widgets.show_custom_metric("Missing Portfolios", len(missing))
-    with col2:
-        widgets.show_custom_metric("Excess Portfolios", len(excess))
+    widgets.show_custom_metric("Missing Portfolios", len(missing))
+    widgets.show_custom_metric("Excess Portfolios", len(excess))
 
     layout.add_vertical_space(1)
 
@@ -222,24 +208,21 @@ def render_both_issues():
         completion_df.to_excel(writer, index=False, sheet_name="Completion")
     buffer.seek(0)
 
-    col1, col2 = st.columns(2)
-    with col1:
-        widgets.download_button(
-            label=DOWNLOAD_COMPLETION_TEMPLATE,
-            data=buffer,
-            filename="completion_template.xlsx",
-            key="download_completion_both",
-        )
+    widgets.download_button(
+        label=DOWNLOAD_COMPLETION_TEMPLATE,
+        data=buffer,
+        filename="completion_template.xlsx",
+        key="download_completion_both",
+    )
 
-    with col2:
-        completed_file = widgets.file_uploader(
-            label=UPLOAD_COMPLETION_TEMPLATE, key="upload_completion_both"
-        )
+    completed_file = widgets.file_uploader(
+        label=UPLOAD_COMPLETION_TEMPLATE, key="upload_completion_both"
+    )
 
-        if completed_file:
-            SessionManager.set(SessionKeys.MISSING_PORTFOLIOS, [])
-            messages.show_success(SUCCESS_MESSAGES["COMPLETION_UPLOADED"])
-            st.rerun()
+    if completed_file:
+        SessionManager.set(SessionKeys.MISSING_PORTFOLIOS, [])
+        messages.show_success(SUCCESS_MESSAGES["COMPLETION_UPLOADED"])
+        st.rerun()
 
     layout.add_vertical_space(1)
     layout.show_divider()

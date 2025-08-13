@@ -1,0 +1,104 @@
+"""
+File readers for Excel and CSV files
+"""
+
+import pandas as pd
+from io import BytesIO
+from typing import Optional, List
+
+
+def read_excel(file: BytesIO, sheet_name: Optional[str] = None) -> pd.DataFrame:
+    """
+    Read Excel file and return DataFrame
+    
+    Args:
+        file: Excel file as BytesIO
+        sheet_name: Name of sheet to read (optional)
+    
+    Returns:
+        DataFrame with file contents
+    """
+    # Read with specific dtypes to prevent scientific notation for IDs
+    dtype_spec = {
+        'Campaign ID': str,
+        'Ad Group ID': str,
+        'Portfolio ID': str,
+        'Ad ID': str,
+        'Keyword ID': str,
+        'Product Targeting ID': str
+    }
+    
+    if sheet_name:
+        df = pd.read_excel(file, sheet_name=sheet_name, dtype=dtype_spec, engine='openpyxl')
+    else:
+        df = pd.read_excel(file, dtype=dtype_spec, engine='openpyxl')
+    
+    return df
+
+
+def read_csv(file: BytesIO) -> pd.DataFrame:
+    """
+    Read CSV file and return DataFrame
+    
+    Args:
+        file: CSV file as BytesIO
+    
+    Returns:
+        DataFrame with file contents
+    """
+    # Read with specific dtypes to prevent scientific notation for IDs
+    dtype_spec = {
+        'Campaign ID': str,
+        'Ad Group ID': str,
+        'Portfolio ID': str,
+        'Ad ID': str,
+        'Keyword ID': str,
+        'Product Targeting ID': str
+    }
+    
+    df = pd.read_csv(file, dtype=dtype_spec)
+    return df
+
+
+def validate_headers(df: pd.DataFrame, required_columns: List[str]) -> bool:
+    """
+    Validate that DataFrame has all required columns
+    
+    Args:
+        df: DataFrame to validate
+        required_columns: List of required column names
+    
+    Returns:
+        True if all columns present, False otherwise
+    """
+    df_columns = list(df.columns)
+    return df_columns == required_columns
+
+
+def get_sheet_names(file: BytesIO) -> List[str]:
+    """
+    Get list of sheet names from Excel file
+    
+    Args:
+        file: Excel file as BytesIO
+    
+    Returns:
+        List of sheet names
+    """
+    excel_file = pd.ExcelFile(file, engine='openpyxl')
+    return excel_file.sheet_names
+
+
+def check_sheet_exists(file: BytesIO, sheet_name: str) -> bool:
+    """
+    Check if specific sheet exists in Excel file
+    
+    Args:
+        file: Excel file as BytesIO
+        sheet_name: Name of sheet to check
+    
+    Returns:
+        True if sheet exists, False otherwise
+    """
+    sheets = get_sheet_names(file)
+    return sheet_name in sheets

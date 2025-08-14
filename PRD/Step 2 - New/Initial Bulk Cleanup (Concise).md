@@ -10,30 +10,37 @@
 ## תנאי סינון
 שורה נשמרת **רק אם כל התנאים מתקיימים**:
 
-| תנאי | ערך נדרש |
-|------|-----------|
-| Entity | "Product Targeting" או "Keyword" |
-| State | "enabled" |
-| Campaign State (Informational only) | "enabled" |
-| Ad Group State (Informational only) | "enabled" |
-| Portfolio Name (Informational only) | **לא** ברשימת ignored |
+### 1. Entity
+- ערך נדרש: "Product Targeting" או "Keyword"
+
+### 2. State
+- ערך נדרש: "enabled"
+
+### 3. Campaign State (Informational only)
+- ערך נדרש: "enabled"
+
+### 4. Ad Group State (Informational only)
+- ערך נדרש: "enabled"
+
+### 5. Portfolio Name (Informational only)
+- ערך נדרש: **לא** ברשימת ignored
 
 ## פלט
 DataFrame מנוקה עם שורות רלוונטיות בלבד
 
 ## דוגמה
 
-| Entity | State | Campaign State | Ad Group State | Portfolio | נשמר? |
-|--------|-------|----------------|----------------|-----------|-------|
+| Entity | State | Campaign State | Ad Group State | Portfolio Name (Informational only) | נשמר? |
+|--------|-------|----------------|----------------|-------------------------------------|-------|
 | Keyword | enabled | enabled | enabled | Port_A | ✓ |
 | Campaign | enabled | enabled | enabled | Port_B | ✗ (Entity) |
 | Keyword | paused | enabled | enabled | Port_C | ✗ (State) |
 | Keyword | enabled | enabled | enabled | Port_Ignored | ✗ (Ignored) |
 
 ## טיפול במקרי קצה
-- אם לא נשארו שורות → שגיאה: "After first cleanse no rows are left in bulk file"
-- אם אין לשונית Sponsored Products Campaigns → שגיאה
+- אם לא נשארו שורות → שגיאה: "After first cleanse no rows are left in bulk file - go back to step 1"
+- אם אין לשונית Sponsored Products Campaigns → שגיאה: "Bulk file lacks 'Sponsored Products Campaigns' - reupload in step 1"
 
 ## הערות
-- הניקוי **לא מסנן** לפי Virtual Map, רק לפי ignored
 - מתבצע **לפני** השוואת פורטפוליוז
+- **חשוב**: אם המשתמש מעלה קובץ חדש בסטפ 1, כל התהליך מתאפס והוא צריך להתחיל מחדש

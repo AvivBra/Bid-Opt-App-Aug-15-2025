@@ -5,7 +5,7 @@
 - Bulk הועלה בהצלחה  
 - סוג אופטימיזציה נבחר
 
-## תרשים זרימה
+## תרשים זרימה ראשי
 
 ```
 [START Step 2]
@@ -26,7 +26,7 @@
     ├─[5.1 יצירת Completion Template]
     ├─[5.2 העלאה ע"י משתמש]
     ├─[5.3 מיזוג ל-Virtual Map]
-    └─[חזרה ל-3]
+    └─[חזרה ל-2 (ניקוי מחדש)]
          ↓
 [6. הקפאת Virtual Map + טריגור אוטומטי]
     ↓
@@ -38,30 +38,62 @@
 [END Step 2 / START Step 3]
 ```
 
-## טבלת שלבים ומסמכי איפיון
+## עקרון המעגליות בלולאת ההשלמה
 
-| שלב | מסמך איפיון | מוכן |
-|-----|-------------|------|
-| 1. יצירת Virtual Map ראשוני | Step 2 - Initial Virtual Map Creation (Concise).md | ✓ |
-| 2. ניקוי ראשוני של Bulk | Step 2 - Initial Bulk Cleanup (Concise).md | ✓ |
-| 3. השוואת פורטפוליוז ובדיקת תוצאות | Step 2 - Portfolio Comparison (Concise).md | ✓ |
-| 4.3 מיזוג Completion Template | Step 2 - Completion Template Merge (Concise).md | ✓ |
-| 5. הקפאת Virtual Map | Step 2 - Virtual Map Freeze (Concise).md | ✓ |
-| טיפול בשגיאות | Errors.md (קיים) | ✓ |
+**חשוב: התהליך מעגלי** - אחרי כל מיזוג של Completion Template:
+1. Virtual Map מתעדכן עם הנתונים החדשים
+2. הבאלק מנוקה מחדש (עם רשימת ignored מעודכנת)
+3. חוזרים להשוואת פורטפוליוז
+4. אם עדיין יש חסרים - חוזרים ללולאה
+5. התהליך ממשיך עד שאין חסרים
 
-## טבלת שלבים וקבצי קוד
+## תיאור השלבים
 
-| שלב | קובץ קוד | פונקציה עיקרית |
-|-----|----------|-----------------|
-| 1. יצירת Virtual Map ראשוני | `app/ui/tabs/validate_tab.py` | `initialize_virtual_map()` |
-| 2. ניקוי ראשוני של Bulk | `core/validate/bulk_cleanse.py` | `initial_cleanup()` |
-| 3. השוואת פורטפוליוז ובדיקת תוצאות | `core/mapping/virtual_map.py` | `get_missing_portfolios()`, `get_excess_portfolios()` |
-| 4.1 יצירת Completion Template | `core/io/writers.py` | `create_completion_template()` |
-| 4.3 מיזוג ל-Virtual Map | `core/mapping/virtual_map.py` | `merge_completion_template()` |
-| 5. הקפאת Virtual Map + טריגור | `core/mapping/virtual_map.py` | `freeze()` + טריגור Step 3 |
-| 6. התחלת Step 3 אוטומטית | `app/ui/tabs/output_tab.py` | `process_optimizations()` |
+### שלב 1: יצירת Virtual Map ראשוני
+- קריאת Template File
+- זיהוי פורטפוליוז עם "Ignore"
+- בניית מבנה נתונים ראשוני
+
+### שלב 2: ניקוי ראשוני של Bulk
+- סינון לפי Entity (Keyword/Product Targeting)
+- סינון לפי States (כולם enabled)
+- הסרת פורטפוליוז מרשימת ignored
+
+### שלב 3: השוואת פורטפוליוז
+- השוואה בין Bulk מנוקה ל-Virtual Map
+- זיהוי חסרים (בבאלק אך לא ב-VM)
+- זיהוי עודפים (ב-VM אך לא בבאלק)
+
+### שלב 4: בדיקת תוצאות וטיפול
+- אין בעיות → המשך ישיר
+- חסרים → לולאת השלמה
+- עודפים → הצגה והעתקה
+- שילוב → טיפול בשניהם
+
+### שלב 5: לולאת השלמת חסרים
+- יצירת Completion Template
+- המתנה למילוי משתמש
+- ולידציה ומיזוג
+- חזרה לניקוי והשוואה
+
+### שלב 6: הקפאת Virtual Map
+- נעילת הנתונים לקריאה בלבד
+- יצירת עותק קפוא
+- טריגור אוטומטי ל-Step 3
+
+## לוגיקת השוואת פורטפוליוז
+
+| סוג | הגדרה |
+|-----|--------|
+| **חסרים** | קיימים בבאלק המנוקה, לא בוירטואל מאפ, לא באיגנור |
+| **עודפים** | קיימים בוירטואל מאפ, לא בבאלק המנוקה |
 
 ## תנאי יציאה
 - Virtual Map מלא וקפוא
 - Bulk מנוקה
 - **אין אפשרות חזרה - התהליך חד-כיווני**
+- Step 3 מתחיל אוטומטית
+
+## קבצי איפיון קשורים
+- ראה `Step 2 - Documentation and Code References.md` לרשימת כל המסמכים והקוד
+- ראה `Step 2 - Examples and Scenarios.md` לדוגמאות ותרחישים מלאים

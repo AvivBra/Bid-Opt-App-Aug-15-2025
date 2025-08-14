@@ -20,10 +20,14 @@ Virtual Map שכולל:
 - **פלוס** כל הפורטפוליוז התקינים מ-Completion Template
 - **מינוס** פורטפוליוז שסומנו כ-Ignore
 
-## ולידציות חוסמות
-- Base Bid ריק או לא תקין → דחיית הקובץ
-- **Portfolio לא קיים ב-Bulk המנוקה → דחיית הקובץ + הודעה: "Portfolio '{name}' does not exist in Bulk file"**
-- Target CPA לא תקין → שמור כ-None (לא חוסם)
+פורטפוליוז עם שגיאות חוזרים לקומפלישן טמפלט הבא להשלמה
+
+## ולידציות וטיפול בשגיאות
+- Base Bid ריק או לא תקין → הוספה לקומפלישן טמפלט הבא עם הערה
+- Portfolio לא קיים ב-Bulk המנוקה → הוספה לקומפלישן טמפלט הבא עם הערה
+- Target CPA לא תקין → הוספה לקומפלישן טמפלט הבא עם הערה
+- הודעה כללית למשתמש: "Missing or invalid values found. Please download template, fill and upload again"
+- עמודה רביעית "Error" בקומפלישן טמפלט עם: "Invalid value, please correct"
 
 ## דוגמה
 

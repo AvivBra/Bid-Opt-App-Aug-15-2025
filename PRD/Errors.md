@@ -23,21 +23,42 @@
 
 ## 2. שלב 2 – Validate Portfolios
 
-**בדיקות:**
-1. פורמט קובץ – חייב להיות Excel או CSV.
-2. בדיקת נוכחות נתונים – לאחר כותרות תקינות, חייבת להיות לפחות שורה אחת של נתונים.
-3. בדיקת כותרות – הכותרות חייבות להתאים למבנה ה־Template.
-4. קריאות קובץ – אם המערכת לא מצליחה לקרוא את הקובץ (קידוד, פגום וכו').
+### בדיקות:
+1. פורמט קובץ – חייב להיות Excel או CSV
+2. נוכחות נתונים – חייבת להיות לפחות שורה אחת אחרי הכותרות
+3. כותרות – חייבות להתאים למבנה הטמפלט
+4. קריאות קובץ – המערכת חייבת להצליח לקרוא את הקובץ
+5. ולידציית ערכים בקומפלישן טמפלט
 
-**הודעות שגיאה:**
+### הודעות שגיאה:
 
-| קוד | הודעה | תנאי הפעלה | צבע |
-|-----|-------|------------|------|
-| S2-001 | `Template format should only be Excel or CSV.` | פורמט קובץ שגוי | אדום |
-| S2-002 | `Template does not contain data.` | אין שורות נתונים אחרי הכותרות | אדום |
-| S2-003 | `Template titles are incorrect.` | כותרות שונות מהנדרש | אדום |
-| S2-004 | `System cannot read template file.` | שגיאה בקריאת הקובץ | אדום |
-| S2-005 | `All portfolios are marked as "Ignore". Cannot continue processing.` | כל הפורטפוליוז מסומנים `Ignore` | אדום |
+**S2-001** (אדום)
+- הודעה: `Template format should only be Excel or CSV.`
+- תנאי: פורמט קובץ שגוי
+
+**S2-002** (אדום)
+- הודעה: `Template does not contain data.`
+- תנאי: אין שורות נתונים אחרי הכותרות
+
+**S2-003** (אדום)
+- הודעה: `Template titles are incorrect.`
+- תנאי: כותרות שונות מהנדרש
+
+**S2-004** (אדום)
+- הודעה: `System cannot read template file.`
+- תנאי: שגיאה בקריאת הקובץ
+
+**S2-005** (אדום)
+- הודעה: `All portfolios are marked as "Ignore". Cannot continue processing.`
+- תנאי: כל הפורטפוליוז מסומנים כ-Ignore
+
+**S2-006** (אדום)
+- הודעה: `After first cleanse no rows are left in bulk file.`
+- תנאי: אחרי הניקוי הראשוני לא נשארו שורות
+
+**S2-007** (אדום)
+- הודעה: `Missing or invalid values found. Please download template, fill and upload again.`
+- תנאי: ערכים חסרים או שגויים בקומפלישן טמפלט
 
 
 

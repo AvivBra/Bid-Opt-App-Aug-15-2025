@@ -18,10 +18,6 @@ project/
 │
 ├── app/
 │   ├── main.py
-│   ├── pages/
-│   │   ├── step1_upload.py
-│   │   ├── step2_validate.py
-│   │   └── step3_output.py
 │   ├── state/
 │   │   └── session.py                    # 🔄 דורש הוספת מונה איטרציות
 │   └── ui/
@@ -40,14 +36,15 @@ project/
 │   └── ui_text.py
 │
 ├── core/
+│   ├── errors/
+│   │   └── messages.yaml                # קיים - קובץ הודעות שגיאה
 │   ├── io/
 │   │   ├── readers.py
 │   │   └── writers.py
 │   ├── mapping/
 │   │   └── virtual_map.py
 │   ├── output/
-│   │   ├── files_builder.py
-│   │   └── filenames.py
+│   │   └── files_builder.py             # כולל גם יצירת שמות קבצים
 │   └── validate/
 │       ├── bulk_cleanse.py
 │       ├── portfolio_comparison.py       # ➕ חדש - ריק, דורש מימוש
@@ -70,26 +67,25 @@ project/
 │
 ├── services/
 │   ├── portfolio_service.py
-│   ├── step2_service.py                  # ➕ חדש - ריק, דורש מימוש
-│   ├── virtual_map_service.py
-│   ├── file_io/
-│   │   ├── readers.py
-│   │   └── writers.py
-│   └── validation/
-│       ├── data_validator.py
-│       └── file_validator.py
+│   └── step2_service.py                  # ➕ חדש - ריק, דורש מימוש (כולל ניהול Virtual Map)
 │
 ├── utils/
 │   ├── debug_manager.py
 │   ├── file_utils.py
-│   ├── format_utils.py
-│   └── session_manager.py
+│   └── format_utils.py
 │
 ├── PRD/                                  # תיקיית איפיון
 ├── tests/                                # תיקיית טסטים
 ├── .gitignore
 ├── README.md
 └── requirements.txt
+
+## קבצים למחיקה:
+❌ app/pages/ (תיקייה ריקה)
+❌ services/file_io/ (כפילות עם core/io)
+❌ services/virtual_map_service.py (יועבר ל-step2_service)
+❌ utils/session_manager.py (כפילות עם app/state/session)
+❌ core/output/filenames.py (יועבר ל-files_builder)
 ```
 
 ---
@@ -156,7 +152,7 @@ project/
 
 ---
 
-## Phase 4: לוגיקה בסיסית למוקאפ 🔄 התחיל - **עדיפות עליונה**
+## Phase 4: לוגיקה בסיסית למוקאפ 🔄 התחיל 10% - **עדיפות עליונה**
 
 ### מה בוצע:
 - ✅ `core/validate/portfolios.py` - **נמחק** 
@@ -165,25 +161,44 @@ project/
 - ✅ `services/step2_service.py` - **נוצר ריק**
 - ✅ `models/step2_models.py` - **נוצר ריק**
 
-### מה צריך לממש:
+### מה צריך לממש בדחיפות:
 
-#### 1. קריאת וכתיבת קבצים
-- `core/io/readers.py` - קריאת Excel/CSV (קיים, צריך לבדוק אם עובד)
-- `core/io/writers.py` - כתיבת Excel (קיים, צריך לבדוק אם עובד)
+#### 🔴 קבצים ריקים קריטיים (יום 1):
+1. **`services/step2_service.py`** - **הכי קריטי!** צריך לממש:
+   - ניהול כל התהליך של Step 2
+   - ניהול Virtual Map
+   - מונה איטרציות (MAX=10)
+   - תזמור בין כל הפעולות
 
-#### 2. Virtual Map
-- `core/mapping/virtual_map.py` - ניהול Virtual Map (קיים, צריך לבדוק אם מלא)
+2. **`core/validate/portfolio_comparison.py`** - צריך לממש:
+   - פונקציית `compare_portfolios(bulk_df, virtual_map)`
+   - פונקציית `get_missing_portfolios()`
+   - פונקציית `get_excess_portfolios()`
 
-#### 3. ניקוי וולידציה
-- `core/validate/bulk_cleanse.py` - ניקוי ראשוני (קיים, צריך לבדוק)
-- `core/validate/portfolio_comparison.py` - **ריק** - צריך לממש לוגיקת השוואה
-- `core/validate/completion_validator.py` - **ריק** - צריך לממש ולידציות
+3. **`core/validate/completion_validator.py`** - צריך לממש:
+   - ולידציה של completion template
+   - בדיקת ערכי Base Bid
+   - בדיקה שפורטפוליו קיים בבאלק
 
-#### 4. שירותים
-- `services/step2_service.py` - **ריק** - צריך לממש מנהל התהליך
+4. **`models/step2_models.py`** - צריך לממש:
+   - ComparisonResult dataclass
+   - ValidationError dataclass
+   - Step2State dataclass
 
-#### 5. מודלים
-- `models/step2_models.py` - **ריק** - צריך לממש data classes
+#### 🟡 תיקונים דחופים (יום 2):
+5. **`app/state/session.py`** - להוסיף:
+   - `completion_iteration_count: int = 0`
+   - `MAX_ITERATIONS = 10`
+
+6. **`app/ui/tabs/validate_tab.py`** - שכתוב:
+   - להעביר כל הלוגיקה ל-`services/step2_service.py`
+   - להשאיר רק קריאות לסרוויס ותצוגת UI
+
+#### ✅ קבצים קיימים לבדיקה:
+7. **`core/io/readers.py` ו-`writers.py`** - לבדוק אם עובדים
+8. **`core/mapping/virtual_map.py`** - לבדוק אם מלא ועובד
+9. **`core/validate/bulk_cleanse.py`** - לבדוק אם עובד
+10. **`core/output/files_builder.py`** - להוסיף פונקציות מ-filenames.py שנמחק
 
 #### 6. יצירת קבצי Output
 - `core/output/files_builder.py` - יצירת Working/Clean Files (קיים, צריך לבדוק)
@@ -238,23 +253,31 @@ project/
 
 ## סדר עדיפויות מעודכן להמשך פיתוח
 
-### עדיפות 1 - היסודות
-1. **`core/io/readers.py` ו-`writers.py`** - קריאה וכתיבה
-2. **`core/mapping/virtual_map.py`** - Virtual Map
-3. **`core/validate/bulk_cleanse.py`** - ניקוי ראשוני
+### סדר ביצוע מומלץ - 3 ימים
 
-### עדיפות 2 - מבנה חדש לStep 2
-4. **`services/step2_service.py`** - ניהול התהליך
-5. **`core/validate/portfolio_comparison.py`** - השוואות
-6. **`core/validate/completion_validator.py`** - ולידציות
-7. **`models/step2_models.py`** - מודלים
-8. **עדכון `app/state/session.py`** - מונה איטרציות
-9. **שכתוב `app/ui/tabs/validate_tab.py`** - הפרדת לוגיקה
+#### יום 1 - הקבצים הקריטיים:
+1. **בוקר**: `services/step2_service.py` - המנוע המרכזי
+2. **צהריים**: 3 הקבצים הריקים:
+   - `core/validate/portfolio_comparison.py`
+   - `core/validate/completion_validator.py`
+   - `models/step2_models.py`
 
-### עדיפות 3 - השלמה
-10. **`core/output/files_builder.py`** - יצירת קבצי output
-11. **חיבור הכל יחד** - אינטגרציה
-12. **בדיקות מקיפות**
+#### יום 2 - תיקונים ושכתובים:
+3. **בוקר**: `app/state/session.py` - הוספת מונה איטרציות
+4. **צהריים**: `app/ui/tabs/validate_tab.py` - הפרדת לוגיקה
+
+#### יום 3 - אינטגרציה ובדיקות:
+5. **בוקר**: בדיקת קבצים קיימים וחיבורים
+6. **צהריים**: בדיקות אינטגרציה מלאות
+
+### פקודות למחיקת כפילויות (אם עדיין קיימות):
+```bash
+rm -rf app/pages
+rm -rf services/file_io
+rm services/virtual_map_service.py
+rm utils/session_manager.py
+rm core/output/filenames.py
+```
 
 ---
 

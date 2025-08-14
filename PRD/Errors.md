@@ -60,6 +60,10 @@
 - הודעה: `Missing or invalid values found. Please download template, fill and upload again.`
 - תנאי: ערכים חסרים או שגויים בקומפלישן טמפלט
 
+**S2-008** (אדום)
+- הודעה: `Maximum completion attempts (10) reached. Please start over.`
+- תנאי: הגעה למגבלת איטרציות בלולאת Completion
+
 
 
 ---

@@ -24,6 +24,7 @@
 
 ### 5. Portfolio Name (Informational only)
 - ערך נדרש: **לא** ברשימת ignored
+- **השוואה case-sensitive** - "Portfolio_A" ≠ "portfolio_a"
 
 ## פלט
 DataFrame מנוקה עם שורות רלוונטיות בלבד

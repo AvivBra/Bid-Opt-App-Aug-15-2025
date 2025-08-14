@@ -27,17 +27,34 @@ class VirtualMap:
 
 ## פונקציות עיקריות
 
-| פונקציה | תיאור | קלט | פלט |
-|----------|--------|------|------|
-| `add_portfolio()` | הוספת פורטפוליו | name, base_bid, target_cpa | - |
-| `add_ignored()` | הוספה לרשימת ignored | name | - |
-| `remove_portfolio()` | מחיקת פורטפוליו | name | - |
-| `get_missing_portfolios()` | מציאת חסרים | bulk_portfolios list | missing list |
-| `get_excess_portfolios()` | מציאת עודפים | bulk_portfolios list | excess list |
-| `merge_completion_template()` | מיזוג נתונים | completion_df, bulk_portfolios | errors dict |
-| `freeze()` | נעילה לStep 3 | - | - |
-| `get_data()` | קבלת הנתונים | - | data dict |
-| `get_ignored()` | קבלת רשימת ignored | - | ignored list |
+### פונקציות בנייה ועדכון
+- **`add_portfolio(name, base_bid, target_cpa)`** - הוספת פורטפוליו חדש או עדכון קיים
+- **`add_ignored(name)`** - הוספה לרשימת ignored והסרה מ-data
+- **`remove_portfolio(name)`** - מחיקת פורטפוליו (משמש כש-Base Bid="Ignore")
+
+### פונקציות השוואה
+- **`get_missing_portfolios(bulk_portfolios)`** - מחזיר רשימת פורטפוליוז חסרים (בבאלק אך לא ב-VM)
+- **`get_excess_portfolios(bulk_portfolios)`** - מחזיר רשימת פורטפוליוז עודפים (ב-VM אך לא בבאלק)
+
+### פונקציות מיזוג
+- **`merge_completion_template(completion_df, bulk_portfolios)`** - מיזוג נתונים מ-Completion Template עם דריסה מלאה, מחזיר dictionary של שגיאות
+
+### פונקציות מצב
+- **`freeze()`** - נעילה חד-פעמית במעבר ל-Step 3, יוצר עותק קפוא
+- **`unfreeze()`** - **לא בשימוש!** קיים טכנית אבל לא מופעל (אין חזרה מ-frozen)
+- **`get_data()`** - מחזיר את הנתונים (frozen copy אם נעול, אחרת data רגיל)
+- **`get_ignored()`** - מחזיר רשימת הפורטפוליוז ב-ignored
+
+### פונקציות עזר
+- **`is_empty()`** - בדיקה האם ה-Virtual Map ריק
+- **`clear()`** - **לא בשימוש במהלך Step 2!** משמש רק באיפוס מלא של המערכת (`SessionManager.reset_for_new_processing()`)
+
+## הערות חשובות על השימוש
+- Virtual Map **לא מתרוקן** במהלך Step 2 - רק נבנה, מתמלא וננעל
+- פונקציית `clear()` קיימת רק לצורך איפוס מלא בין הרצות
+- פונקציית `unfreeze()` קיימת בקוד אך **לא נקראת** - אין חזרה מ-frozen
+- זרימת המצבים: ריק → מתמלא (לולאה) → נעול → איפוס מלא (חוזר לריק)
+
 
 ## מצבי Virtual Map
 
@@ -50,6 +67,11 @@ class VirtualMap:
 - Read-only
 - לא ניתן לשינוי
 - משמש לחישובים בלבד
+
+### כללי מעבר בין מצבים
+- **Active → Frozen**: חד-פעמי, בסיום Step 2
+- **Frozen → Active**: אין! רק דרך איפוס מלא
+- **ניווט לא משנה מצב**: מעבר בין טאבים לא משפיע על המצב
 
 ## כללי ניהול
 

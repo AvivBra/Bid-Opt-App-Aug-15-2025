@@ -75,7 +75,11 @@ project/
 │   └── format_utils.py
 │
 ├── PRD/                                  # תיקיית איפיון
-├── tests/                                # תיקיית טסטים
+├── tests/
+│   └── fixtures/                         # ➕ להוסיף בהמשך
+│       ├── valid/                        # קבצי בדיקה תקינים
+│       ├── invalid/                      # קבצי בדיקה שגויים
+│       └── edge_cases/                   # מקרי קצה
 ├── .gitignore
 ├── README.md
 └── requirements.txt
@@ -174,6 +178,7 @@ project/
    - פונקציית `compare_portfolios(bulk_df, virtual_map)`
    - פונקציית `get_missing_portfolios()`
    - פונקציית `get_excess_portfolios()`
+   - **הערה**: מחליף את הקובץ הישן portfolios.py
 
 3. **`core/validate/completion_validator.py`** - צריך לממש:
    - ולידציה של completion template

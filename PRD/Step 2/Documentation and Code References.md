@@ -13,17 +13,6 @@
 | - | Step 2 - Examples and Scenarios.md | דוגמאות ותרחישים | ✓ |
 | - | Errors.md | הודעות שגיאה S2-xxx | ✓ |
 
-## טבלת קבצי קוד
-
-| שלב | קובץ קוד | פונקציות עיקריות | תיאור |
-|-----|----------|-------------------|--------|
-| **1. יצירת Virtual Map** | `app/ui/tabs/validate_tab.py` | `initialize_virtual_map()` | קריאת Template ויצירת מבנה ראשוני |
-| **2. ניקוי Bulk** | `core/validate/bulk_cleanse.py` | `initial_cleanup()` | סינון לפי Entity, States, ו-ignored |
-| **3. השוואת פורטפוליוז** | `core/mapping/virtual_map.py` | `get_missing_portfolios()` `get_excess_portfolios()` | זיהוי חסרים ועודפים |
-| **4. יצירת Completion** | `core/io/writers.py` | `create_completion_template()` | יצירת קובץ Excel עם חסרים |
-| **5. מיזוג נתונים** | `core/mapping/virtual_map.py` | `merge_completion_template()` | עדכון Virtual Map עם דריסה |
-| **6. הקפאה** | `core/mapping/virtual_map.py` | `freeze()` `unfreeze()` | נעילה/שחרור לקריאה בלבד |
-| **7. טריגור Step 3** | `app/ui/tabs/output_tab.py` | `process_optimizations()` | התחלת עיבוד אוטומטית |
 
 ## מבנה Virtual Map - סיכום
 

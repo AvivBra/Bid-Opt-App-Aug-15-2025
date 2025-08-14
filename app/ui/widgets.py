@@ -110,17 +110,20 @@ def show_file_status(template_file: Optional[BytesIO], bulk_file: Optional[Bytes
 def copy_to_clipboard_button(
     text: str, button_label: str = "Copy to Clipboard", key: Optional[str] = None
 ) -> bool:
-    """Create a copy to clipboard button"""
+    """Create a copy to clipboard button - shows text for manual copy"""
+
+    # Create button
     button_clicked = st.button(button_label, use_container_width=True, key=key)
 
     if button_clicked:
-        # Note: Actual clipboard functionality requires JavaScript
-        # This is a mockup, so we'll just show a success message
-        st.success("Copied to clipboard!")
-
-        # Display the text that would be copied
-        with st.expander("Copied text:", expanded=True):
-            st.code(text, language=None)
+        # Show the text area with the content for manual copying
+        st.text_area(
+            "Select all text below and copy (Ctrl+C / Cmd+C):",
+            value=text,
+            height=150,
+            key=f"{key}_textarea",
+        )
+        st.info("Select the text above and press Ctrl+C (or Cmd+C on Mac) to copy")
 
     return button_clicked
 

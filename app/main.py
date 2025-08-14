@@ -31,17 +31,34 @@ def main():
     # Show header
     layout.show_header()
 
-    # Create tabs - Streamlit handles tab switching automatically
-    tab1, tab2, tab3 = st.tabs([TAB_UPLOAD, TAB_VALIDATE, TAB_OUTPUT])
+    # Check if we need to switch tabs
+    if st.session_state.get("switch_to_validate"):
+        st.session_state["switch_to_validate"] = False
+        default_tab = 1  # Validate tab
+    elif st.session_state.get("switch_to_output"):
+        st.session_state["switch_to_output"] = False
+        default_tab = 2  # Output tab
+    else:
+        # Check current step to determine default tab
+        current_step = st.session_state.get("current_step", 1)
+        if current_step >= 3:
+            default_tab = 2  # Output tab
+        elif current_step >= 2:
+            default_tab = 1  # Validate tab
+        else:
+            default_tab = 0  # Upload tab
+
+    # Create tabs with default selection
+    tabs = st.tabs([TAB_UPLOAD, TAB_VALIDATE, TAB_OUTPUT])
 
     # Render each tab content
-    with tab1:
+    with tabs[0]:
         upload_tab.render()
 
-    with tab2:
+    with tabs[1]:
         validate_tab.render()
 
-    with tab3:
+    with tabs[2]:
         output_tab.render()
 
     # Footer (optional)

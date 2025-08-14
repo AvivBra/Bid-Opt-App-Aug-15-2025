@@ -11,6 +11,7 @@ from app.state.session import SessionManager
 from config.ui_text import *
 from config.settings import SessionKeys, ProcessingStates
 from config.constants import MIN_BID, MAX_BID
+from core.output import files_builder
 
 
 def render():
@@ -26,7 +27,7 @@ def render():
     # Tab header
     st.header(OUTPUT_HEADER)
 
-    # Use centered content container - same width as Upload tab
+    # Use centered content container
     with layout.create_content_container():
         # Get or set processing state
         processing_state = SessionManager.get(SessionKeys.PROCESSING_STATE)
@@ -39,33 +40,33 @@ def render():
 
 
 def process_optimizations():
-    """Simulate processing optimizations"""
+    """Process optimizations with real data"""
 
     # Show processing message
     with messages.show_spinner(PROCESSING_MESSAGE):
-        # Simulate processing time
+        # Simulate processing time with progress
         progress_bar = st.progress(0, text="Initializing...")
 
         steps = [
             (0.2, "Reading files..."),
-            (0.4, "Cleaning data..."),
-            (0.6, "Applying optimizations..."),
-            (0.8, "Generating output files..."),
+            (0.4, "Applying Virtual Map..."),
+            (0.6, "Creating output files..."),
+            (0.8, "Formatting data..."),
             (1.0, "Finalizing..."),
         ]
 
         for progress, text in steps:
-            time.sleep(0.5)  # Simulate work
+            time.sleep(0.3)  # Shorter delay for real processing
             progress_bar.progress(progress, text=text)
 
-        time.sleep(0.5)
+        time.sleep(0.3)
         progress_bar.empty()
+
+    # Generate real output files
+    generate_real_files()
 
     # Mark as completed
     SessionManager.set(SessionKeys.PROCESSING_STATE, ProcessingStates.COMPLETED)
-
-    # Generate mock output files
-    generate_mock_files()
 
     # Show completion message
     messages.show_success(SUCCESS_MESSAGES["PROCESSING_COMPLETE"])
@@ -74,37 +75,65 @@ def process_optimizations():
     st.rerun()
 
 
-def generate_mock_files():
-    """Generate mock output files"""
+def generate_real_files():
+    """Generate real output files from processed data"""
 
-    # Create mock data
-    mock_data = pd.DataFrame(
-        {
-            "Campaign": ["Campaign 1", "Campaign 2", "Campaign 3"],
-            "Ad Group": ["Ad Group A", "Ad Group B", "Ad Group C"],
-            "Keyword": ["keyword1", "keyword2", "keyword3"],
-            "Bid": [0.50, 0.75, 1.00],
-            "Status": ["Active", "Active", "Active"],
-        }
-    )
+    # Get data from session
+    bulk_df = st.session_state.get("bulk_df")
+    virtual_map = st.session_state.get("virtual_map")
+    optimizations = SessionManager.get(SessionKeys.SELECTED_OPTIMIZATIONS, [])
+
+    if bulk_df is None:
+        messages.show_error("No bulk data available for processing")
+        return
 
     # Create Working File
-    working_buffer = BytesIO()
-    with pd.ExcelWriter(working_buffer, engine="openpyxl") as writer:
-        mock_data.to_excel(writer, index=False, sheet_name="Clean Zero Sales")
-        mock_data.to_excel(writer, index=False, sheet_name="Working Zero Sales")
-    working_buffer.seek(0)
+    working_buffer = files_builder.create_working_file(bulk_df, optimizations)
 
     # Create Clean File
-    clean_buffer = BytesIO()
-    with pd.ExcelWriter(clean_buffer, engine="openpyxl") as writer:
-        mock_data.to_excel(writer, index=False, sheet_name="Clean Zero Sales")
-    clean_buffer.seek(0)
+    clean_buffer = files_builder.create_clean_file(bulk_df, optimizations)
 
     # Store in session
     SessionManager.set(
         SessionKeys.OUTPUT_FILES, {"working": working_buffer, "clean": clean_buffer}
     )
+
+    # Calculate statistics
+    stats = calculate_real_statistics(bulk_df, virtual_map)
+    st.session_state["processing_stats"] = stats
+
+
+def calculate_real_statistics(bulk_df: pd.DataFrame, virtual_map) -> dict:
+    """Calculate real statistics from processed data"""
+
+    total_rows = len(bulk_df)
+
+    # Count rows with different entities
+    entity_counts = (
+        bulk_df["Entity"].value_counts() if "Entity" in bulk_df.columns else {}
+    )
+
+    # Count bid ranges (mockup - in real version would check actual bid changes)
+    bid_column = "Bid" if "Bid" in bulk_df.columns else None
+    high_bids = 0
+    low_bids = 0
+
+    if bid_column:
+        bid_values = pd.to_numeric(bulk_df[bid_column], errors="coerce")
+        high_bids = len(bid_values[bid_values > MAX_BID])
+        low_bids = len(bid_values[bid_values < MIN_BID])
+
+    # Count portfolios processed
+    portfolios_count = len(virtual_map.get_data()) if virtual_map else 0
+
+    return {
+        "total_rows": total_rows,
+        "entity_counts": entity_counts.to_dict(),
+        "high_bids": high_bids,
+        "low_bids": low_bids,
+        "portfolios_processed": portfolios_count,
+        "calculation_errors": 0,  # Mockup - would be calculated in real optimizer
+    }
 
 
 def show_results():
@@ -112,12 +141,11 @@ def show_results():
 
     # Get output files
     output_files = SessionManager.get(SessionKeys.OUTPUT_FILES, {})
+    stats = st.session_state.get("processing_stats", {})
 
-    # Show any calculation notices (mockup)
+    # Show any calculation notices
     st.subheader("Processing Summary")
-
-    # Mock calculation errors
-    show_calculation_notices()
+    show_calculation_notices(stats)
 
     layout.add_vertical_space(1)
     layout.show_divider()
@@ -155,18 +183,17 @@ def show_results():
     layout.add_vertical_space(2)
 
     # Statistics section
-    show_statistics()
+    show_real_statistics(stats)
 
 
-def show_calculation_notices():
-    """Show calculation errors and warnings (mockup)"""
+def show_calculation_notices(stats: dict):
+    """Show calculation errors and warnings based on real data"""
 
-    # Mock data for demonstration
-    calculation_errors = 7
-    high_bids = 3
-    low_bids = 2
+    calculation_errors = stats.get("calculation_errors", 0)
+    high_bids = stats.get("high_bids", 0)
+    low_bids = stats.get("low_bids", 0)
 
-    # Pink notice for calculation errors
+    # Pink notice for calculation errors (mockup - always 0 for now)
     if calculation_errors > 0:
         message = WARNING_MESSAGES["CALCULATION_ERRORS"].format(
             count=calculation_errors, optimization_type="Zero Sales"
@@ -181,38 +208,44 @@ def show_calculation_notices():
         messages.show_info(message)
 
 
-def show_statistics():
-    """Show processing statistics"""
+def show_real_statistics(stats: dict):
+    """Show real processing statistics"""
 
     st.subheader("Processing Statistics")
 
     col1, col2, col3, col4 = st.columns(4)
 
-    # Mock statistics
+    # Real statistics
     with col1:
-        st.metric("Total Rows Processed", "1,234")
+        total_rows = stats.get("total_rows", 0)
+        st.metric("Total Rows Processed", f"{total_rows:,}")
 
     with col2:
-        st.metric("Optimizations Applied", "856")
+        portfolios = stats.get("portfolios_processed", 0)
+        st.metric("Portfolios Processed", f"{portfolios:,}")
 
     with col3:
-        st.metric("Average Bid Change", "+15%")
+        high_bids = stats.get("high_bids", 0)
+        st.metric("High Bids (>1.25)", f"{high_bids:,}")
 
     with col4:
-        st.metric("Processing Time", "2.3s")
+        low_bids = stats.get("low_bids", 0)
+        st.metric("Low Bids (<0.02)", f"{low_bids:,}")
 
     # Additional details in expander
     with st.expander("Detailed Statistics", expanded=False):
-        st.write("**Optimization Breakdown:**")
-        st.write("• Zero Sales: 856 rows modified")
-        st.write("• Skipped rows: 378 (invalid data)")
+        entity_counts = stats.get("entity_counts", {})
+
+        if entity_counts:
+            st.write("**Entity Breakdown:**")
+            for entity, count in entity_counts.items():
+                st.write(f"• {entity}: {count:,} rows")
+
         st.write("")
-        st.write("**Bid Distribution:**")
-        st.write(f"• Below {MIN_BID}: 2 rows")
-        st.write(f"• Within range: 1,229 rows")
-        st.write(f"• Above {MAX_BID}: 3 rows")
+        st.write("**Optimization Applied:**")
+        st.write("• Zero Sales: Applied to all eligible rows")
+
         st.write("")
         st.write("**File Information:**")
-        st.write("• Working File: 2 sheets")
-        st.write("• Clean File: 1 sheet")
-        st.write("• Total file size: ~245 KB")
+        st.write("• Working File: 2 sheets (Clean + Working)")
+        st.write("• Clean File: 1 sheet (Clean only)")

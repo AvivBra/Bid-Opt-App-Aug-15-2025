@@ -10,6 +10,9 @@ from app.state.session import SessionManager
 from config.ui_text import *
 from config.settings import SessionKeys
 from config.constants import TEMPLATE_REQUIRED_COLUMNS
+from core.validate import bulk_cleanse, portfolios
+from core.mapping.virtual_map import VirtualMap
+from core.io import writers
 
 
 def render():
@@ -25,43 +28,91 @@ def render():
     # Tab header
     st.header(VALIDATE_HEADER)
 
-    # Use centered content container - same width as Upload tab
+    # Use centered content container
     with layout.create_content_container():
         st.subheader(VALIDATION_SUMMARY)
 
+        # Get files from session
         template_file = SessionManager.get(SessionKeys.TEMPLATE_FILE)
         bulk_file = SessionManager.get(SessionKeys.BULK_FILE)
+        template_df = st.session_state.get("template_df")
+        bulk_df = st.session_state.get("bulk_df")
 
+        # Show file status
         widgets.show_file_status(template_file, bulk_file)
 
         layout.add_vertical_space(1)
 
-        # Mock portfolio comparison (in real app, this would analyze files)
-        # Scenario selector (mockup only)
-        with st.expander("Mockup Scenario Selector", expanded=True):
-            scenario = st.radio(
-                "Select validation scenario to demonstrate:",
-                [
-                    "No Issues",
-                    "Missing Portfolios",
-                    "Excess Portfolios",
-                    "Both Missing and Excess",
-                ],
-                key="validation_scenario",
+        # Initialize or get Virtual Map
+        if "virtual_map" not in st.session_state:
+            st.session_state["virtual_map"] = VirtualMap()
+        elif not isinstance(st.session_state["virtual_map"], VirtualMap):
+            # If it's a dict from old session, replace with VirtualMap
+            st.session_state["virtual_map"] = VirtualMap()
+
+        virtual_map = st.session_state["virtual_map"]
+
+        # If this is first time in Step 2, initialize Virtual Map from template
+        if len(virtual_map.data) == 0 and template_df is not None:
+            initialize_virtual_map(virtual_map, template_df)
+
+        # Perform initial cleanup and portfolio comparison
+        if bulk_df is not None and template_df is not None:
+            # Clean bulk data - remove ignored portfolios
+            ignored_list = virtual_map.get_ignored()
+            cleaned_bulk = bulk_cleanse.initial_cleanup(bulk_df, ignored_list)
+
+            # Check if any rows left after cleanup
+            if len(cleaned_bulk) == 0:
+                messages.show_error(ERROR_MESSAGES["S2-006"])
+                return
+
+            # Get portfolios from CLEANED bulk for comparison
+            cleaned_bulk_portfolios = bulk_cleanse.get_unique_portfolios(cleaned_bulk)
+
+            # Get missing and excess portfolios - compare with CLEANED bulk
+            missing = virtual_map.get_missing_portfolios(cleaned_bulk_portfolios)
+            excess = virtual_map.get_excess_portfolios(cleaned_bulk_portfolios)
+
+            # Store in session
+            SessionManager.set(SessionKeys.MISSING_PORTFOLIOS, missing)
+            SessionManager.set(SessionKeys.EXCESS_PORTFOLIOS, excess)
+
+            st.subheader("Portfolio Comparison Results")
+
+            # Handle different scenarios
+            if len(missing) == 0 and len(excess) == 0:
+                render_no_issues()
+            elif len(missing) > 0 and len(excess) == 0:
+                render_missing_portfolios(missing, virtual_map, cleaned_bulk_portfolios)
+            elif len(missing) == 0 and len(excess) > 0:
+                render_excess_portfolios(excess)
+            else:
+                render_both_issues(
+                    missing, excess, virtual_map, cleaned_bulk_portfolios
+                )
+
+
+def initialize_virtual_map(virtual_map: VirtualMap, template_df: pd.DataFrame):
+    """Initialize Virtual Map from template"""
+    for _, row in template_df.iterrows():
+        portfolio_name = row["Portfolio Name"]
+        base_bid = row["Base Bid"]
+        target_cpa = row.get("Target CPA", None)
+
+        # Handle Ignore
+        if str(base_bid).strip().lower() == "ignore":
+            virtual_map.add_ignored(portfolio_name)
+            continue
+
+        try:
+            base_bid_float = float(base_bid)
+            target_cpa_float = (
+                float(target_cpa) if target_cpa and str(target_cpa).strip() else None
             )
-
-        layout.add_vertical_space(1)
-        st.subheader("Portfolio Comparison Results")
-
-        # Process based on scenario
-        if scenario == "No Issues":
-            render_no_issues()
-        elif scenario == "Missing Portfolios":
-            render_missing_portfolios()
-        elif scenario == "Excess Portfolios":
-            render_excess_portfolios()
-        else:  # Both Missing and Excess
-            render_both_issues()
+            virtual_map.add_portfolio(portfolio_name, base_bid_float, target_cpa_float)
+        except (ValueError, TypeError):
+            continue
 
 
 def render_no_issues():
@@ -75,24 +126,17 @@ def render_no_issues():
 
     # Continue button
     if widgets.action_button(CONTINUE_BUTTON, key="continue_to_output"):
+        # Freeze Virtual Map before going to Step 3
+        st.session_state["virtual_map"].freeze()
         SessionManager.set(SessionKeys.CURRENT_STEP, 3)
         SessionManager.set(SessionKeys.VALIDATION_RESULTS, {"status": "complete"})
-        SessionManager.set(SessionKeys.MISSING_PORTFOLIOS, [])
         st.rerun()
 
 
-def render_missing_portfolios():
+def render_missing_portfolios(
+    missing: list, virtual_map: VirtualMap, bulk_portfolios: list
+):
     """Render UI when there are missing portfolios"""
-    # Mock missing portfolios
-    missing = [
-        "Portfolio_A",
-        "Portfolio_B",
-        "Portfolio_C",
-        "Portfolio_D",
-        "Portfolio_E",
-    ]
-    SessionManager.set(SessionKeys.MISSING_PORTFOLIOS, missing)
-
     messages.show_warning(
         f"Found {len(missing)} missing portfolios that need to be configured"
     )
@@ -109,22 +153,11 @@ def render_missing_portfolios():
     )
 
     # Create completion template
-    completion_df = pd.DataFrame(
-        {
-            "Portfolio Name": missing,
-            "Base Bid": [""] * len(missing),
-            "Target CPA": [""] * len(missing),
-        }
-    )
-
-    buffer = BytesIO()
-    with pd.ExcelWriter(buffer, engine="openpyxl") as writer:
-        completion_df.to_excel(writer, index=False, sheet_name="Completion")
-    buffer.seek(0)
+    completion_buffer = writers.create_completion_template(missing)
 
     widgets.download_button(
         label=DOWNLOAD_COMPLETION_TEMPLATE,
-        data=buffer,
+        data=completion_buffer,
         filename="completion_template.xlsx",
         key="download_completion",
     )
@@ -135,18 +168,22 @@ def render_missing_portfolios():
     )
 
     if completed_file:
-        # Mock validation - clear missing portfolios
-        SessionManager.set(SessionKeys.MISSING_PORTFOLIOS, [])
-        messages.show_success(SUCCESS_MESSAGES["COMPLETION_UPLOADED"])
-        st.rerun()
+        # Read completion template
+        completion_df = pd.read_excel(completed_file)
+
+        # Merge into Virtual Map
+        errors = virtual_map.merge_completion_template(completion_df, bulk_portfolios)
+
+        if errors:
+            for error in errors.values():
+                messages.show_error(error)
+        else:
+            messages.show_success(SUCCESS_MESSAGES["COMPLETION_UPLOADED"])
+            st.rerun()
 
 
-def render_excess_portfolios():
+def render_excess_portfolios(excess: list):
     """Render UI when there are excess portfolios"""
-    # Mock excess portfolios
-    excess = ["Portfolio_X", "Portfolio_Y", "Portfolio_Z"]
-    SessionManager.set(SessionKeys.EXCESS_PORTFOLIOS, excess)
-
     messages.show_warning(f"Found {len(excess)} excess portfolios in template")
 
     widgets.show_custom_metric("Missing Portfolios", "0")
@@ -161,26 +198,27 @@ def render_excess_portfolios():
     messages.show_portfolio_list(excess, "Excess Portfolios")
 
     # Copy button
-    excess_text = "\n".join(excess)
+    excess_text = "\n".join([str(p) for p in excess])
     widgets.copy_to_clipboard_button(excess_text)
 
     layout.add_vertical_space(1)
 
     # Continue button (enabled for excess only)
     if widgets.action_button(CONTINUE_BUTTON, key="continue_with_excess"):
+        # Freeze Virtual Map before going to Step 3
+        st.session_state["virtual_map"].freeze()
         SessionManager.set(SessionKeys.CURRENT_STEP, 3)
         SessionManager.set(SessionKeys.VALIDATION_RESULTS, {"status": "complete"})
+        SessionManager.set(
+            SessionKeys.PROCESSING_STATE, "idle"
+        )  # Reset processing state
         st.rerun()
 
 
-def render_both_issues():
+def render_both_issues(
+    missing: list, excess: list, virtual_map: VirtualMap, bulk_portfolios: list
+):
     """Render UI when there are both missing and excess portfolios"""
-    # Mock portfolios
-    missing = ["Portfolio_A", "Portfolio_B", "Portfolio_C"]
-    excess = ["Portfolio_X", "Portfolio_Y"]
-    SessionManager.set(SessionKeys.MISSING_PORTFOLIOS, missing)
-    SessionManager.set(SessionKeys.EXCESS_PORTFOLIOS, excess)
-
     messages.show_warning(
         f"Found {len(missing)} missing and {len(excess)} excess portfolios"
     )
@@ -195,22 +233,11 @@ def render_both_issues():
     st.write("Download and complete the template below:")
 
     # Create completion template
-    completion_df = pd.DataFrame(
-        {
-            "Portfolio Name": missing,
-            "Base Bid": [""] * len(missing),
-            "Target CPA": [""] * len(missing),
-        }
-    )
-
-    buffer = BytesIO()
-    with pd.ExcelWriter(buffer, engine="openpyxl") as writer:
-        completion_df.to_excel(writer, index=False, sheet_name="Completion")
-    buffer.seek(0)
+    completion_buffer = writers.create_completion_template(missing)
 
     widgets.download_button(
         label=DOWNLOAD_COMPLETION_TEMPLATE,
-        data=buffer,
+        data=completion_buffer,
         filename="completion_template.xlsx",
         key="download_completion_both",
     )
@@ -220,9 +247,18 @@ def render_both_issues():
     )
 
     if completed_file:
-        SessionManager.set(SessionKeys.MISSING_PORTFOLIOS, [])
-        messages.show_success(SUCCESS_MESSAGES["COMPLETION_UPLOADED"])
-        st.rerun()
+        # Read completion template
+        completion_df = pd.read_excel(completed_file)
+
+        # Merge into Virtual Map
+        errors = virtual_map.merge_completion_template(completion_df, bulk_portfolios)
+
+        if errors:
+            for error in errors.values():
+                messages.show_error(error)
+        else:
+            messages.show_success(SUCCESS_MESSAGES["COMPLETION_UPLOADED"])
+            st.rerun()
 
     layout.add_vertical_space(1)
     layout.show_divider()
@@ -231,7 +267,7 @@ def render_both_issues():
     st.subheader("2. Excess Portfolios - For Information")
     messages.show_portfolio_list(excess, "Excess Portfolios")
 
-    excess_text = "\n".join(excess)
+    excess_text = "\n".join([str(p) for p in excess])
     widgets.copy_to_clipboard_button(excess_text, key="copy_excess_both")
 
     layout.add_vertical_space(1)
@@ -246,6 +282,8 @@ def render_both_issues():
     if widgets.action_button(
         CONTINUE_BUTTON, key="continue_both", disabled=button_disabled
     ):
+        # Freeze Virtual Map before going to Step 3
+        st.session_state["virtual_map"].freeze()
         SessionManager.set(SessionKeys.CURRENT_STEP, 3)
         SessionManager.set(SessionKeys.VALIDATION_RESULTS, {"status": "complete"})
         st.rerun()

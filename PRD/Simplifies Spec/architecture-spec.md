@@ -55,46 +55,102 @@
 ## 3. מבנה קבצים מלא
 
 ```
+
 bid-optimizer/
 ├── app/
-│   ├── main.py                    # נקודת כניסה
+│   ├── main.py
 │   ├── ui/
-│   │   ├── page_single.py         # עמוד ראשי
+│   │   ├── page_single.py
 │   │   ├── panels/
-│   │   │   ├── upload_panel.py    # פאנל העלאה
-│   │   │   ├── validate_panel.py  # פאנל ולידציה
-│   │   │   └── output_panel.py    # פאנל פלט
+│   │   │   ├── __init__.py
+│   │   │   ├── upload_panel.py
+│   │   │   ├── validate_panel.py
+│   │   │   └── output_panel.py
 │   │   ├── components/
-│   │   │   ├── checklist.py       # רשימת אופטימיזציות
-│   │   │   ├── file_cards.py      # כרטיסי קבצים
-│   │   │   ├── alerts.py          # הודעות
-│   │   │   └── buttons.py         # כפתורים
-│   │   └── layout.py               # פריסה
+│   │   │   ├── __init__.py
+│   │   │   ├── checklist.py
+│   │   │   ├── file_cards.py
+│   │   │   ├── alerts.py
+│   │   │   └── buttons.py
+│   │   └── layout.py
 │   └── state/
-│       └── session.py              # ניהול State
+│       ├── __init__.py
+│       ├── session.py
+│       └── mock_data.py
 ├── business/
+│   ├── __init__.py
 │   ├── validators/
-│   │   ├── template_validator.py  # ולידציית Template
-│   │   └── bulk_validator.py      # ולידציית Bulk
+│   │   ├── __init__.py
+│   │   ├── template_validator.py
+│   │   └── bulk_validator.py
 │   ├── processors/
-│   │   ├── optimizer.py           # מנהל אופטימיזציות
-│   │   ├── file_generator.py      # יוצר קבצי פלט
-│   │   └── optimizations/         # 14 אופטימיזציות
+│   │   ├── __init__.py
+│   │   ├── optimizer.py
+│   │   ├── file_generator.py
+│   │   └── optimizations/
+│   │       ├── __init__.py
+│   │       ├── base_optimization.py
+│   │       └── zero_sales.py
 │   └── services/
-│       └── orchestrator.py        # מתאם ראשי
+│       ├── __init__.py
+│       └── orchestrator.py
 ├── data/
+│   ├── __init__.py
 │   ├── readers/
-│   │   ├── excel_reader.py        # קורא Excel
-│   │   └── csv_reader.py          # קורא CSV
+│   │   ├── __init__.py
+│   │   ├── excel_reader.py
+│   │   └── csv_reader.py
 │   ├── writers/
-│   │   └── output_writer.py       # כותב קבצי פלט
-│   └── models/
-│       ├── portfolio.py           # מודל Portfolio
-│       └── validation_result.py   # תוצאות ולידציה
-└── config/
-    ├── constants.py                # קבועים
-    ├── settings.py                 # הגדרות
-    └── ui_text.py                  # טקסטים
+│   │   ├── __init__.py
+│   │   └── output_writer.py
+│   ├── models/
+│   │   ├── __init__.py
+│   │   ├── portfolio.py
+│   │   └── validation_result.py
+│   └── template_generator.py
+├── config/
+│   ├── __init__.py
+│   ├── constants.py
+│   ├── settings.py
+│   └── ui_text.py
+├── utils/
+│   ├── __init__.py
+│   ├── file_utils.py
+│   └── filename_generator.py
+├── tests/
+│   ├── __init__.py
+│   ├── unit/
+│   │   ├── __init__.py
+│   │   ├── test_readers.py
+│   │   ├── test_writers.py
+│   │   ├── test_validators.py
+│   │   ├── test_optimizations.py
+│   │   ├── test_file_generator.py
+│   │   └── test_orchestrator.py
+│   ├── integration/
+│   │   ├── __init__.py
+│   │   ├── test_upload_flow.py
+│   │   ├── test_validation_flow.py
+│   │   ├── test_processing_flow.py
+│   │   └── test_end_to_end.py
+│   ├── fixtures/
+│   │   ├── valid_template.xlsx
+│   │   ├── valid_bulk.xlsx
+│   │   ├── invalid_template.xlsx
+│   │   ├── invalid_bulk.xlsx
+│   │   ├── large_bulk.xlsx
+│   │   ├── empty_template.xlsx
+│   │   └── missing_columns_bulk.xlsx
+│   └── conftest.py
+├── .streamlit/
+│   └── config.toml
+├── requirements.txt
+├── requirements-dev.txt
+├── pytest.ini
+├── .gitignore
+└── README.md
+
+
 ```
 
 ## 4. זרימת נתונים (Data Flow)

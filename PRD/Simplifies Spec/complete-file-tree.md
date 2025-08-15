@@ -1,3 +1,6 @@
+# עץ קבצים מלא - Bid Optimizer
+
+```
 bid-optimizer/
 ├── app/
 │   ├── main.py
@@ -17,7 +20,8 @@ bid-optimizer/
 │   │   └── layout.py
 │   └── state/
 │       ├── __init__.py
-│       └── session.py
+│       ├── session.py
+│       └── mock_data.py
 ├── business/
 │   ├── __init__.py
 │   ├── validators/
@@ -31,20 +35,7 @@ bid-optimizer/
 │   │   └── optimizations/
 │   │       ├── __init__.py
 │   │       ├── base_optimization.py
-│   │       ├── zero_sales.py
-│   │       ├── portfolio_bid.py
-│   │       ├── budget_optimization.py
-│   │       ├── keyword_optimization.py
-│   │       ├── product_targeting.py
-│   │       ├── day_parting.py
-│   │       ├── placement_optimization.py
-│   │       ├── search_term.py
-│   │       ├── negative_keyword.py
-│   │       ├── asin_targeting.py
-│   │       ├── category_targeting.py
-│   │       ├── budget_allocation.py
-│   │       ├── campaign_structure.py
-│   │       └── bid_modifier.py
+│   │       └── zero_sales.py
 │   └── services/
 │       ├── __init__.py
 │       └── orchestrator.py
@@ -57,10 +48,11 @@ bid-optimizer/
 │   ├── writers/
 │   │   ├── __init__.py
 │   │   └── output_writer.py
-│   └── models/
-│       ├── __init__.py
-│       ├── portfolio.py
-│       └── validation_result.py
+│   ├── models/
+│   │   ├── __init__.py
+│   │   ├── portfolio.py
+│   │   └── validation_result.py
+│   └── template_generator.py
 ├── config/
 │   ├── __init__.py
 │   ├── constants.py
@@ -68,8 +60,38 @@ bid-optimizer/
 │   └── ui_text.py
 ├── utils/
 │   ├── __init__.py
-│   └── file_utils.py
+│   ├── file_utils.py
+│   └── filename_generator.py
+├── tests/
+│   ├── __init__.py
+│   ├── unit/
+│   │   ├── __init__.py
+│   │   ├── test_readers.py
+│   │   ├── test_writers.py
+│   │   ├── test_validators.py
+│   │   ├── test_optimizations.py
+│   │   ├── test_file_generator.py
+│   │   └── test_orchestrator.py
+│   ├── integration/
+│   │   ├── __init__.py
+│   │   ├── test_upload_flow.py
+│   │   ├── test_validation_flow.py
+│   │   ├── test_processing_flow.py
+│   │   └── test_end_to_end.py
+│   ├── fixtures/
+│   │   ├── valid_template.xlsx
+│   │   ├── valid_bulk.xlsx
+│   │   ├── invalid_template.xlsx
+│   │   ├── invalid_bulk.xlsx
+│   │   ├── large_bulk.xlsx
+│   │   ├── empty_template.xlsx
+│   │   └── missing_columns_bulk.xlsx
+│   └── conftest.py
 ├── .streamlit/
 │   └── config.toml
 ├── requirements.txt
+├── requirements-dev.txt
+├── pytest.ini
+├── .gitignore
 └── README.md
+```

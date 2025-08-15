@@ -1,0 +1,12 @@
+[server]
+maxUploadSize = 40
+enableCORS = false
+
+[theme]
+primaryColor = "#FF0000"
+backgroundColor = "#FFFFFF"
+textColor = "#000000"
+font = "sans serif"
+
+[client]
+layout = "centered"

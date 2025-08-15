@@ -16,6 +16,10 @@ def render_validation_panel():
     ):
         return
 
+    # Don't show if we're processing or complete
+    if st.session_state.get("current_state") in ["processing", "complete"]:
+        return
+
     st.markdown(
         """
     <div class='section-container'>
@@ -69,6 +73,7 @@ def render_valid_state():
             use_container_width=True,
             disabled=len(st.session_state.get("selected_optimizations", [])) == 0,
         ):
+            # IMPORTANT: Set state to processing to trigger output panel
             st.session_state.current_state = "processing"
             st.rerun()
 
@@ -97,7 +102,7 @@ def render_missing_state():
 
     # List of missing portfolios
     if missing_portfolios:
-        render_portfolio_list(missing_portfolios, "Missing Portfolios")
+        render_portfolio_list(missing_portfolios, "Missing")
 
     # Upload new template button
     col1, col2, col3 = st.columns([1, 2, 1])

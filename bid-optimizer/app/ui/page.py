@@ -11,6 +11,7 @@ if app_dir not in sys.path:
 from ui.layout import apply_custom_css, create_header
 from ui.panels.upload_panel import render_upload_panel
 from ui.panels.validate_panel import render_validation_panel
+from ui.panels.output_panel import render_output_panel
 
 
 def render_page():
@@ -27,21 +28,11 @@ def render_page():
     # Upload panel
     render_upload_panel()
 
-    # Validation panel - ACTUAL PANEL, NOT PLACEHOLDER
+    # Validation panel
     render_validation_panel()
 
-    # Output panel - still placeholder for now
-    st.markdown(
-        """
-    <div class='section-container'>
-        <h2 class='section-header'>Output Files</h2>
-        <p style='color: #666666; text-align: center; padding: 40px 0;'>
-            Output section - Coming soon
-        </p>
-    </div>
-    """,
-        unsafe_allow_html=True,
-    )
+    # Output panel - NOW CONNECTED!
+    render_output_panel()
 
 
 def initialize_session_state():

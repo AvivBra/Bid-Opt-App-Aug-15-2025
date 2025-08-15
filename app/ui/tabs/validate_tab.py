@@ -10,7 +10,7 @@ from app.state.session import SessionManager
 from config.ui_text import *
 from config.settings import SessionKeys
 from config.constants import TEMPLATE_REQUIRED_COLUMNS
-from core.validate import bulk_cleanse, portfolios
+from core.validate import bulk_cleanse
 from core.mapping.virtual_map import VirtualMap
 from core.io import writers
 

@@ -1,0 +1,75 @@
+bid-optimizer/
+├── app/
+│   ├── main.py
+│   ├── ui/
+│   │   ├── page_single.py
+│   │   ├── panels/
+│   │   │   ├── __init__.py
+│   │   │   ├── upload_panel.py
+│   │   │   ├── validate_panel.py
+│   │   │   └── output_panel.py
+│   │   ├── components/
+│   │   │   ├── __init__.py
+│   │   │   ├── checklist.py
+│   │   │   ├── file_cards.py
+│   │   │   ├── alerts.py
+│   │   │   └── buttons.py
+│   │   └── layout.py
+│   └── state/
+│       ├── __init__.py
+│       └── session.py
+├── business/
+│   ├── __init__.py
+│   ├── validators/
+│   │   ├── __init__.py
+│   │   ├── template_validator.py
+│   │   └── bulk_validator.py
+│   ├── processors/
+│   │   ├── __init__.py
+│   │   ├── optimizer.py
+│   │   ├── file_generator.py
+│   │   └── optimizations/
+│   │       ├── __init__.py
+│   │       ├── base_optimization.py
+│   │       ├── zero_sales.py
+│   │       ├── portfolio_bid.py
+│   │       ├── budget_optimization.py
+│   │       ├── keyword_optimization.py
+│   │       ├── product_targeting.py
+│   │       ├── day_parting.py
+│   │       ├── placement_optimization.py
+│   │       ├── search_term.py
+│   │       ├── negative_keyword.py
+│   │       ├── asin_targeting.py
+│   │       ├── category_targeting.py
+│   │       ├── budget_allocation.py
+│   │       ├── campaign_structure.py
+│   │       └── bid_modifier.py
+│   └── services/
+│       ├── __init__.py
+│       └── orchestrator.py
+├── data/
+│   ├── __init__.py
+│   ├── readers/
+│   │   ├── __init__.py
+│   │   ├── excel_reader.py
+│   │   └── csv_reader.py
+│   ├── writers/
+│   │   ├── __init__.py
+│   │   └── output_writer.py
+│   └── models/
+│       ├── __init__.py
+│       ├── portfolio.py
+│       └── validation_result.py
+├── config/
+│   ├── __init__.py
+│   ├── constants.py
+│   ├── settings.py
+│   └── ui_text.py
+├── utils/
+│   ├── __init__.py
+│   └── file_utils.py
+├── .streamlit/
+│   └── config.toml
+├── requirements.txt
+└── README.md

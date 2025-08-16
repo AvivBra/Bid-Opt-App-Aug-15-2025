@@ -86,7 +86,7 @@ class SessionStateManager:
         elif state == "validate":
             # Can proceed if validation passed
             validation = st.session_state.get("validation_result", {})
-            return validation.get("is_valid", False)
+            return validation.get("is_valid", False) if validation else False
 
         elif state == "ready":
             # Can proceed if optimizations selected
@@ -178,13 +178,16 @@ class SessionStateManager:
     @staticmethod
     def get_state_summary() -> Dict[str, Any]:
         """Get summary of current state"""
+        validation_result = st.session_state.get("validation_result")
+        is_validated = False
+        if validation_result and isinstance(validation_result, dict):
+            is_validated = validation_result.get("is_valid", False)
+
         return {
             "current_state": SessionStateManager.get_current_state(),
             "has_template": st.session_state.get("template_file") is not None,
             "has_bulk": st.session_state.get("bulk_file") is not None,
-            "is_validated": st.session_state.get("validation_result", {}).get(
-                "is_valid", False
-            ),
+            "is_validated": is_validated,
             "optimizations_count": len(
                 st.session_state.get("selected_optimizations", [])
             ),

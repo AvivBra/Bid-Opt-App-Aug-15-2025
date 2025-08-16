@@ -96,13 +96,18 @@ def render_missing_state():
 
     # Error message
     render_error_alert(
-        "Missing portfolios found",
+        "Missing portfolios found - Processing Blocked",
         f"The following portfolios are in Bulk but not in Template:",
     )
 
     # List of missing portfolios
     if missing_portfolios:
         render_portfolio_list(missing_portfolios, "Missing")
+
+    # Info about blocking
+    st.error(
+        "You cannot proceed to processing until all portfolios are included in the Template."
+    )
 
     # Upload new template button
     col1, col2, col3 = st.columns([1, 2, 1])
@@ -119,7 +124,9 @@ def render_missing_state():
             st.rerun()
 
     # Info about next steps
-    st.info("Please add the missing portfolios to your Template file and upload again")
+    st.info(
+        "Please add ALL the missing portfolios listed above to your Template file and upload again"
+    )
 
 
 def render_ignored_state():

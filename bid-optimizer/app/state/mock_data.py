@@ -4,13 +4,66 @@ Provides mock data for testing different scenarios
 """
 
 import pandas as pd
+import numpy as np
 from io import BytesIO
 from datetime import datetime
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Tuple
 
 
 class MockDataProvider:
     """Provides mock data for different scenarios"""
+
+    # Column names for Amazon Bulk file
+    BULK_COLUMNS = [
+        "Product",
+        "Entity",
+        "Operation",
+        "Campaign ID",
+        "Ad Group ID",
+        "Portfolio ID",
+        "Ad ID",
+        "Keyword ID",
+        "Product Targeting ID",
+        "Campaign Name",
+        "Ad Group Name",
+        "Campaign Name (Informational only)",
+        "Ad Group Name (Informational only)",
+        "Portfolio Name (Informational only)",
+        "Start Date",
+        "End Date",
+        "Targeting Type",
+        "State",
+        "Campaign State (Informational only)",
+        "Ad Group State (Informational only)",
+        "Daily Budget",
+        "SKU",
+        "ASIN",
+        "Eligibility Status (Informational only)",
+        "Reason for Ineligibility (Informational only)",
+        "Ad Group Default Bid",
+        "Ad Group Default Bid (Informational only)",
+        "Bid",
+        "Keyword Text",
+        "Native Language Keyword",
+        "Native Language Locale",
+        "Match Type",
+        "Bidding Strategy",
+        "Placement",
+        "Percentage",
+        "Product Targeting Expression",
+        "Resolved Product Targeting Expression (Informational only)",
+        "Impressions",
+        "Clicks",
+        "Click-through Rate",
+        "Spend",
+        "Sales",
+        "Orders",
+        "Units",
+        "Conversion Rate",
+        "ACOS",
+        "CPC",
+        "ROAS",
+    ]
 
     @staticmethod
     def get_mock_template_valid() -> pd.DataFrame:
@@ -22,11 +75,9 @@ class MockDataProvider:
                     "Kids-Brand-EU",
                     "Supplements-US",
                     "Supplements-EU",
-                    "Electronics-US",
-                    "Electronics-EU",
                 ],
-                "Base Bid": [1.25, 0.95, 2.10, 1.85, 1.50, "Ignore"],
-                "Target CPA": [5.00, 4.50, 8.00, 7.50, 6.00, None],
+                "Base Bid": [1.25, 0.95, 2.10, 1.85],
+                "Target CPA": [5.00, 4.50, 8.00, 7.50],
             }
         )
 
@@ -35,13 +86,44 @@ class MockDataProvider:
         """Get template with missing portfolios"""
         return pd.DataFrame(
             {
+                "Portfolio Name": ["Kids-Brand-US", "Kids-Brand-EU"],
+                "Base Bid": [1.25, 0.95],
+                "Target CPA": [5.00, 4.50],
+            }
+        )
+
+    @staticmethod
+    def get_mock_template_excess() -> pd.DataFrame:
+        """Get template with excess portfolios"""
+        return pd.DataFrame(
+            {
                 "Portfolio Name": [
                     "Kids-Brand-US",
                     "Kids-Brand-EU",
                     "Supplements-US",
+                    "Supplements-EU",
+                    "Electronics-US",  # Extra
+                    "Electronics-EU",  # Extra
                 ],
-                "Base Bid": [1.25, 0.95, 2.10],
-                "Target CPA": [5.00, 4.50, 8.00],
+                "Base Bid": [1.25, 0.95, 2.10, 1.85, 1.50, 1.75],
+                "Target CPA": [5.00, 4.50, 8.00, 7.50, 6.00, 6.50],
+            }
+        )
+
+    @staticmethod
+    def get_mock_template_mixed() -> pd.DataFrame:
+        """Get template with mixed issues"""
+        return pd.DataFrame(
+            {
+                "Portfolio Name": [
+                    "Kids-Brand-US",
+                    "Kids-Brand-EU",
+                    "Supplements-US",  # Will be set to Ignore
+                    "Electronics-US",  # Extra (not in bulk)
+                    "NewProduct-US",  # Extra (not in bulk)
+                ],
+                "Base Bid": [1.25, 0.95, "Ignore", 1.50, 2.00],
+                "Target CPA": [5.00, 4.50, None, 6.00, 10.00],
             }
         )
 
@@ -64,94 +146,170 @@ class MockDataProvider:
         )
 
     @staticmethod
-    def get_mock_bulk_data() -> pd.DataFrame:
-        """Get mock bulk data with 46 columns"""
-        # Create base data
-        num_rows = 100
+    def get_mock_bulk_data(
+        num_rows: int = 100, portfolios: List[str] = None
+    ) -> pd.DataFrame:
+        """
+        Get mock bulk data with 46 columns
 
-        data = {
-            "Product": ["ASIN" + str(i % 20) for i in range(num_rows)],
-            "Entity": [
-                "Keyword" if i % 2 == 0 else "Product Targeting"
-                for i in range(num_rows)
-            ],
-            "Operation": ["Create"] * num_rows,
-            "Campaign ID": ["1234567890"] * num_rows,
-            "Ad Group ID": ["9876543210"] * num_rows,
-            "Portfolio ID": ["1111111111"] * num_rows,
-            "Ad ID": [""] * num_rows,
-            "Keyword ID": [""] * num_rows,
-            "Product Targeting ID": [""] * num_rows,
-            "Campaign Name": ["Campaign-1"] * num_rows,
-            "Ad Group Name": ["AdGroup-1"] * num_rows,
-            "Campaign Name (Informational only)": ["Campaign-1"] * num_rows,
-            "Ad Group Name (Informational only)": ["AdGroup-1"] * num_rows,
-            "Portfolio Name (Informational only)": [
-                [
-                    "Kids-Brand-US",
-                    "Kids-Brand-EU",
-                    "Supplements-US",
-                    "Supplements-EU",
-                    "Electronics-US",
-                    "Electronics-EU",
-                ][i % 6]
-                for i in range(num_rows)
-            ],
-            "Start Date": ["01/01/2024"] * num_rows,
-            "End Date": [""] * num_rows,
-            "Targeting Type": ["MANUAL"] * num_rows,
-            "State": ["enabled"] * 80 + ["paused"] * 20,
-            "Campaign State (Informational only)": ["enabled"] * 90 + ["paused"] * 10,
-            "Ad Group State (Informational only)": ["enabled"] * 85 + ["paused"] * 15,
-            "Daily Budget": [10.00] * num_rows,
-            "SKU": [""] * num_rows,
-            "ASIN": ["B00" + str(i).zfill(7) for i in range(num_rows)],
-            "Eligibility Status (Informational only)": [""] * num_rows,
-            "Reason for Ineligibility (Informational only)": [""] * num_rows,
-            "Ad Group Default Bid": [1.00] * num_rows,
-            "Ad Group Default Bid (Informational only)": [1.00] * num_rows,
-            "Bid": [0.50 + (i % 30) * 0.1 for i in range(num_rows)],
-            "Keyword Text": ["keyword " + str(i) for i in range(num_rows)],
-            "Native Language Keyword": [""] * num_rows,
-            "Native Language Locale": [""] * num_rows,
-            "Match Type": ["BROAD"] * 50 + ["PHRASE"] * 30 + ["EXACT"] * 20,
-            "Bidding Strategy": [""] * num_rows,
-            "Placement": [""] * num_rows,
-            "Percentage": [""] * num_rows,
-            "Product Targeting Expression": [""] * num_rows,
-            "Resolved Product Targeting Expression (Informational only)": [""]
-            * num_rows,
-            "Impressions": [100 + i * 50 for i in range(num_rows)],
-            "Clicks": [5 + i % 20 for i in range(num_rows)],
-            "Click-through Rate": [0.05 + (i % 10) * 0.01 for i in range(num_rows)],
-            "Spend": [10.00 + i * 2 for i in range(num_rows)],
-            "Sales": [0 if i % 3 == 0 else 50 + i * 10 for i in range(num_rows)],
-            "Orders": [0 if i % 3 == 0 else 1 + i % 5 for i in range(num_rows)],
-            "Units": [0 if i % 3 == 0 else 1 + i % 10 for i in range(num_rows)],
-            "Conversion Rate": [
-                0 if i % 3 == 0 else 0.05 + (i % 20) * 0.01 for i in range(num_rows)
-            ],
-            "ACOS": [0 if i % 3 == 0 else 20 + i % 80 for i in range(num_rows)],
-            "CPC": [0.50 + (i % 20) * 0.05 for i in range(num_rows)],
-            "ROAS": [
-                0 if i % 3 == 0 else 2.0 + (i % 30) * 0.1 for i in range(num_rows)
-            ],
-        }
+        Args:
+            num_rows: Number of rows to generate
+            portfolios: List of portfolio names to use
+        """
+        if portfolios is None:
+            portfolios = [
+                "Kids-Brand-US",
+                "Kids-Brand-EU",
+                "Supplements-US",
+                "Supplements-EU",
+            ]
+
+        # Set random seed for consistency
+        np.random.seed(42)
+
+        data = {}
+
+        # Basic columns
+        data["Product"] = ["ASIN" + str(i % 20).zfill(3) for i in range(num_rows)]
+
+        # Entity distribution: 50% Keyword, 40% Product Targeting, 10% Other
+        entity_choices = (
+            ["Keyword"] * 50
+            + ["Product Targeting"] * 40
+            + ["Campaign"] * 5
+            + ["Ad Group"] * 5
+        )
+        data["Entity"] = np.random.choice(entity_choices, num_rows)
+
+        data["Operation"] = ["Create"] * (num_rows // 2) + ["Update"] * (num_rows // 2)
+
+        # IDs
+        data["Campaign ID"] = ["123456789" + str(i % 10) for i in range(num_rows)]
+        data["Ad Group ID"] = ["987654321" + str(i % 10) for i in range(num_rows)]
+        data["Portfolio ID"] = ["111111111" + str(i % 4) for i in range(num_rows)]
+        data["Ad ID"] = [""] * num_rows
+        data["Keyword ID"] = [""] * num_rows
+        data["Product Targeting ID"] = [""] * num_rows
+
+        # Names
+        data["Campaign Name"] = ["Campaign-" + str(i % 5) for i in range(num_rows)]
+        data["Ad Group Name"] = ["AdGroup-" + str(i % 10) for i in range(num_rows)]
+        data["Campaign Name (Informational only)"] = data["Campaign Name"]
+        data["Ad Group Name (Informational only)"] = data["Ad Group Name"]
+
+        # Portfolio distribution
+        data["Portfolio Name (Informational only)"] = [
+            portfolios[i % len(portfolios)] for i in range(num_rows)
+        ]
+
+        # Dates
+        data["Start Date"] = ["01/01/2024"] * num_rows
+        data["End Date"] = [""] * num_rows
+
+        # Settings
+        data["Targeting Type"] = ["MANUAL"] * (num_rows * 7 // 10) + ["AUTO"] * (
+            num_rows * 3 // 10
+        )
+
+        # States - important for filtering
+        # 80% enabled, 15% paused, 5% archived
+        state_choices = ["enabled"] * 80 + ["paused"] * 15 + ["archived"] * 5
+        data["State"] = np.random.choice(state_choices, num_rows)
+
+        # Campaign and Ad Group states (90% enabled)
+        campaign_state_choices = ["enabled"] * 90 + ["paused"] * 10
+        data["Campaign State (Informational only)"] = np.random.choice(
+            campaign_state_choices, num_rows
+        )
+        data["Ad Group State (Informational only)"] = np.random.choice(
+            campaign_state_choices, num_rows
+        )
+
+        # Budget and Bids
+        data["Daily Budget"] = np.round(np.random.uniform(5, 100, num_rows), 2)
+        data["SKU"] = ["SKU" + str(i).zfill(5) for i in range(num_rows)]
+        data["ASIN"] = ["B00" + str(i).zfill(7) for i in range(num_rows)]
+
+        # Status
+        data["Eligibility Status (Informational only)"] = [""] * num_rows
+        data["Reason for Ineligibility (Informational only)"] = [""] * num_rows
+
+        # Bids
+        data["Ad Group Default Bid"] = np.round(
+            np.random.uniform(0.5, 3.0, num_rows), 3
+        )
+        data["Ad Group Default Bid (Informational only)"] = data["Ad Group Default Bid"]
+        data["Bid"] = np.round(np.random.uniform(0.5, 3.0, num_rows), 3)
+
+        # Keywords
+        data["Keyword Text"] = ["keyword " + str(i) for i in range(num_rows)]
+        data["Native Language Keyword"] = [""] * num_rows
+        data["Native Language Locale"] = [""] * num_rows
+
+        # Match Type
+        match_choices = ["BROAD"] * 50 + ["PHRASE"] * 30 + ["EXACT"] * 20
+        data["Match Type"] = np.random.choice(match_choices, num_rows)
+
+        # Strategy
+        data["Bidding Strategy"] = [""] * num_rows
+        data["Placement"] = [""] * num_rows
+        data["Percentage"] = [""] * num_rows
+
+        # Targeting
+        data["Product Targeting Expression"] = [""] * num_rows
+        data["Resolved Product Targeting Expression (Informational only)"] = [
+            ""
+        ] * num_rows
+
+        # Performance metrics
+        data["Impressions"] = np.random.randint(0, 10000, num_rows)
+        data["Clicks"] = np.random.randint(0, 500, num_rows)
+        data["Click-through Rate"] = np.round(
+            data["Clicks"] / np.maximum(data["Impressions"], 1), 4
+        )
+        data["Spend"] = np.round(np.random.uniform(0, 500, num_rows), 2)
+
+        # Sales - 30% with zero sales (important for Zero Sales optimization)
+        sales_values = np.random.uniform(0, 1000, num_rows)
+        sales_values[np.random.choice(num_rows, num_rows * 3 // 10, replace=False)] = 0
+        data["Sales"] = np.round(sales_values, 2)
+
+        data["Orders"] = np.where(
+            data["Sales"] > 0, np.random.randint(1, 20, num_rows), 0
+        )
+        data["Units"] = np.where(
+            data["Sales"] > 0, np.random.randint(1, 50, num_rows), 0
+        )
+
+        # Conversion metrics
+        data["Conversion Rate"] = np.round(
+            np.where(data["Clicks"] > 0, data["Orders"] / data["Clicks"], 0), 4
+        )
+        data["ACOS"] = np.round(
+            np.where(data["Sales"] > 0, (data["Spend"] / data["Sales"]) * 100, 0), 2
+        )
+        data["CPC"] = np.round(
+            np.where(data["Clicks"] > 0, data["Spend"] / data["Clicks"], 0), 3
+        )
+        data["ROAS"] = np.round(
+            np.where(data["Spend"] > 0, data["Sales"] / data["Spend"], 0), 2
+        )
 
         return pd.DataFrame(data)
 
     @staticmethod
-    def get_cleaned_bulk() -> pd.DataFrame:
+    def get_cleaned_bulk(df: pd.DataFrame = None) -> pd.DataFrame:
         """Get cleaned bulk data (after filtering)"""
-        bulk = MockDataProvider.get_mock_bulk_data()
+        if df is None:
+            df = MockDataProvider.get_mock_bulk_data()
 
         # Apply cleaning filters
-        cleaned = bulk[
-            (bulk["Entity"].isin(["Keyword", "Product Targeting"]))
-            & (bulk["State"] == "enabled")
-            & (bulk["Campaign State (Informational only)"] == "enabled")
-            & (bulk["Ad Group State (Informational only)"] == "enabled")
-        ]
+        cleaned = df[
+            (df["Entity"].isin(["Keyword", "Product Targeting"]))
+            & (df["State"] == "enabled")
+            & (df["Campaign State (Informational only)"] == "enabled")
+            & (df["Ad Group State (Informational only)"] == "enabled")
+        ].copy()
 
         return cleaned
 
@@ -173,18 +331,22 @@ class MockDataProvider:
                 )
 
         elif file_type == "working":
+            # Working file has 2 sheets per optimization
             df = MockDataProvider.get_cleaned_bulk()
             df["Operation"] = "Update"
-            df["Bid"] = 0.02  # Simulated optimization
+            df["Bid"] = 0.02  # Simulated Zero Sales optimization
 
             with pd.ExcelWriter(output, engine="openpyxl") as writer:
+                # Clean sheet - just the updated bulk data
                 df.to_excel(writer, sheet_name="Clean Zero Sales", index=False)
+                # Working sheet - same data (in real app would have extra columns)
                 df.to_excel(writer, sheet_name="Working Zero Sales", index=False)
 
         elif file_type == "clean":
+            # Clean file has 1 sheet per optimization
             df = MockDataProvider.get_cleaned_bulk()
             df["Operation"] = "Update"
-            df["Bid"] = 0.02  # Simulated optimization
+            df["Bid"] = 0.02  # Simulated Zero Sales optimization
 
             with pd.ExcelWriter(output, engine="openpyxl") as writer:
                 df.to_excel(writer, sheet_name="Clean Zero Sales", index=False)
@@ -255,14 +417,97 @@ class MockDataProvider:
         }
 
     @staticmethod
+    def get_mock_scenarios() -> Dict[str, Dict[str, Any]]:
+        """Get all predefined test scenarios"""
+
+        # Valid scenario
+        valid_template = MockDataProvider.get_mock_template_valid()
+        valid_bulk = MockDataProvider.get_mock_bulk_data(100)
+        valid_cleaned = MockDataProvider.get_cleaned_bulk(valid_bulk)
+
+        # Missing scenario
+        missing_template = MockDataProvider.get_mock_template_missing()
+        missing_bulk = MockDataProvider.get_mock_bulk_data(100)
+        missing_cleaned = MockDataProvider.get_cleaned_bulk(missing_bulk)
+        missing_portfolios = list(
+            set(missing_cleaned["Portfolio Name (Informational only)"].unique())
+            - set(missing_template["Portfolio Name"].tolist())
+        )
+
+        return {
+            "valid": {
+                "name": "✅ Valid - All Portfolios Match",
+                "template_df": valid_template,
+                "bulk_df": valid_bulk,
+                "cleaned_df": valid_cleaned,
+                "validation_result": {
+                    "is_valid": True,
+                    "missing_portfolios": [],
+                    "excess_portfolios": [],
+                    "ignored_portfolios": [],
+                    "messages": ["✓ All portfolios valid"],
+                    "errors": [],
+                },
+                "stats": {
+                    "template_portfolios": 4,
+                    "bulk_portfolios": 4,
+                    "original_rows": 100,
+                    "cleaned_rows": len(valid_cleaned),
+                },
+            },
+            "missing": {
+                "name": "❌ Missing - Portfolios Missing (Blocked)",
+                "template_df": missing_template,
+                "bulk_df": missing_bulk,
+                "cleaned_df": missing_cleaned,
+                "validation_result": {
+                    "is_valid": False,
+                    "missing_portfolios": missing_portfolios,
+                    "excess_portfolios": [],
+                    "ignored_portfolios": [],
+                    "messages": ["❌ Missing portfolios found - Processing Blocked"],
+                    "errors": [f"Missing portfolios: {', '.join(missing_portfolios)}"],
+                },
+                "stats": {
+                    "template_portfolios": 2,
+                    "bulk_portfolios": 4,
+                    "original_rows": 100,
+                    "cleaned_rows": len(missing_cleaned),
+                },
+            },
+        }
+
+    @staticmethod
+    def create_scenario_files(scenario_name: str) -> Tuple[BytesIO, BytesIO]:
+        """Create Excel files for a specific scenario"""
+        scenarios = MockDataProvider.get_mock_scenarios()
+        scenario = scenarios.get(scenario_name, scenarios["valid"])
+
+        # Create template file
+        template_output = BytesIO()
+        with pd.ExcelWriter(template_output, engine="openpyxl") as writer:
+            scenario["template_df"].to_excel(writer, sheet_name="Template", index=False)
+        template_output.seek(0)
+
+        # Create bulk file
+        bulk_output = BytesIO()
+        with pd.ExcelWriter(bulk_output, engine="openpyxl") as writer:
+            scenario["bulk_df"].to_excel(
+                writer, sheet_name="Sponsored Products Campaigns", index=False
+            )
+        bulk_output.seek(0)
+
+        return template_output, bulk_output
+
+    @staticmethod
     def get_processing_stats() -> Dict[str, Any]:
         """Get mock processing statistics"""
         return {
             "rows_processed": 1234,
             "rows_modified": 456,
             "calculation_errors": 7,
-            "high_bids": 3,  # > 1.25
-            "low_bids": 2,  # < 0.02
+            "high_bids": 3,
+            "low_bids": 2,
             "processing_time": 2.3,
             "optimizations_applied": ["Zero Sales"],
         }

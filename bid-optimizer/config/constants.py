@@ -137,4 +137,4 @@ PROCESSING_TIMEOUT = 120
 OUTPUT_TIMEOUT = 60
 
 # Debug mode
-DEBUG_MODE = False  # Set to True to enable mock data buttons
+DEBUG_MODE = True  # Set to True to enable mock data buttons

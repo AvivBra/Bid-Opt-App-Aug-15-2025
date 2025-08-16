@@ -150,7 +150,7 @@ class MockDataProvider:
         num_rows: int = 100, portfolios: List[str] = None
     ) -> pd.DataFrame:
         """
-        Get mock bulk data with 46 columns
+        Get mock bulk data with 48 columns
 
         Args:
             num_rows: Number of rows to generate

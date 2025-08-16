@@ -22,7 +22,7 @@ class ExcelReader:
     # Required columns for Template
     TEMPLATE_COLUMNS = ["Portfolio Name", "Base Bid", "Target CPA"]
 
-    # Required columns for Bulk (46 columns)
+    # Required columns for Bulk (48 columns)
     BULK_COLUMNS = [
         "Product",
         "Entity",

@@ -1,10 +1,24 @@
 import streamlit as st
+import sys
+import os
+
+# Add project root to path
+current_dir = os.path.dirname(os.path.abspath(__file__))
+panels_dir = os.path.dirname(current_dir)
+ui_dir = os.path.dirname(panels_dir)
+app_dir = os.path.dirname(ui_dir)
+project_root = os.path.dirname(app_dir)
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
+
 from ui.components.alerts import (
     render_success_alert,
     render_error_alert,
     render_info_alert,
+    render_warning_alert,
 )
 from ui.components.portfolio_list import render_portfolio_list
+from business.services import Orchestrator
 
 
 def render_validation_panel():
@@ -32,11 +46,9 @@ def render_validation_panel():
     validation_state = st.session_state.get("validation_state", "pending")
 
     if validation_state == "pending":
-        # Show loading state
+        # Show loading state and perform real validation
         with st.spinner("Validating..."):
-            # In real implementation, this would trigger validation
-            # For now, we'll simulate with mock data
-            simulate_validation()
+            perform_real_validation()
 
     elif validation_state == "valid":
         # All portfolios valid
@@ -50,8 +62,81 @@ def render_validation_panel():
         # Some portfolios ignored
         render_ignored_state()
 
+    elif validation_state == "error":
+        # Validation errors
+        render_error_state()
+
     # Close div
     st.markdown("</div>", unsafe_allow_html=True)
+
+
+def perform_real_validation():
+    """Perform real validation using Orchestrator"""
+
+    try:
+        # Get files from session state
+        template_file = st.session_state.get("template_file")
+        bulk_file = st.session_state.get("bulk_file")
+
+        if not template_file or not bulk_file:
+            st.session_state.validation_state = "error"
+            st.session_state.validation_errors = ["Files not found in session"]
+            st.rerun()
+            return
+
+        # Reset file pointers
+        template_file.seek(0)
+        bulk_file.seek(0)
+
+        # Create orchestrator and validate
+        orchestrator = Orchestrator()
+        result = orchestrator.validate_files(template_file, bulk_file)
+
+        # Store full result for debugging
+        st.session_state.validation_result = result
+
+        # Store DataFrames if available
+        if "template_df" in result:
+            st.session_state.template_df = result["template_df"]
+        if "bulk_df" in result:
+            st.session_state.bulk_df = result["bulk_df"]
+        if "cleaned_bulk_df" in result:
+            st.session_state.cleaned_bulk_df = result["cleaned_bulk_df"]
+
+        # Process validation result
+        if result["is_valid"]:
+            if result.get("ignored_portfolios"):
+                st.session_state.validation_state = "ignored"
+                st.session_state.ignored_portfolios = result["ignored_portfolios"]
+            else:
+                st.session_state.validation_state = "valid"
+
+            # Store statistics
+            st.session_state.validation_stats = {
+                "total_portfolios": result["stats"].get("template_portfolios", 0),
+                "valid_rows": result["stats"].get("cleaned_rows", 0),
+                "filtered_rows": result["stats"].get("filtered_rows", 0),
+                "original_rows": result["stats"].get("original_rows", 0),
+            }
+
+        elif result.get("missing_portfolios"):
+            st.session_state.validation_state = "missing"
+            st.session_state.missing_portfolios = result["missing_portfolios"]
+
+        else:
+            st.session_state.validation_state = "error"
+            st.session_state.validation_errors = result.get(
+                "errors", ["Unknown validation error"]
+            )
+
+        # Store warnings
+        st.session_state.validation_warnings = result.get("warnings", [])
+
+    except Exception as e:
+        st.session_state.validation_state = "error"
+        st.session_state.validation_errors = [f"Validation failed: {str(e)}"]
+
+    st.rerun()
 
 
 def render_valid_state():
@@ -62,6 +147,16 @@ def render_valid_state():
         "All portfolios valid",
         "All portfolios in Bulk file have Base Bid values in Template",
     )
+
+    # Show warnings if any
+    warnings = st.session_state.get("validation_warnings", [])
+    if warnings:
+        for warning in warnings[:3]:  # Show first 3 warnings
+            render_warning_alert("", warning)
+        if len(warnings) > 3:
+            with st.expander(f"View all {len(warnings)} warnings"):
+                for warning in warnings:
+                    st.write(f"⚠️ {warning}")
 
     # Process button
     col1, col2, col3 = st.columns([1, 2, 1])
@@ -80,13 +175,15 @@ def render_valid_state():
     # Show statistics if available
     if st.session_state.get("validation_stats"):
         stats = st.session_state.validation_stats
-        col1, col2, col3 = st.columns(3)
+        col1, col2, col3, col4 = st.columns(4)
         with col1:
             st.metric("Total Portfolios", stats.get("total_portfolios", 0))
         with col2:
-            st.metric("Valid Rows", stats.get("valid_rows", 0))
+            st.metric("Original Rows", f"{stats.get('original_rows', 0):,}")
         with col3:
-            st.metric("Rows After Filtering", stats.get("filtered_rows", 0))
+            st.metric("After Cleaning", f"{stats.get('valid_rows', 0):,}")
+        with col4:
+            st.metric("Rows Filtered", f"{stats.get('filtered_rows', 0):,}")
 
 
 def render_missing_state():
@@ -150,39 +247,26 @@ def render_ignored_state():
     render_valid_state()
 
 
-def simulate_validation():
-    """Simulate validation for demo purposes"""
-    import time
+def render_error_state():
+    """Render when validation has errors"""
 
-    time.sleep(1)  # Simulate processing time
+    errors = st.session_state.get("validation_errors", ["Unknown error"])
 
-    # Mock validation result
-    # In real implementation, this would come from the orchestrator
-    if "mock_scenario" in st.session_state:
-        scenario = st.session_state.mock_scenario
-        if scenario == "missing":
-            st.session_state.validation_state = "missing"
-            st.session_state.missing_portfolios = [
-                "Portfolio_ABC",
-                "Portfolio_DEF",
-                "Portfolio_GHI",
-            ]
-        elif scenario == "ignored":
-            st.session_state.validation_state = "ignored"
-            st.session_state.ignored_portfolios = [
-                "Portfolio_X",
-                "Portfolio_Y",
-                "Portfolio_Z",
-            ]
-        else:
-            st.session_state.validation_state = "valid"
-    else:
-        # Default to valid
-        st.session_state.validation_state = "valid"
-        st.session_state.validation_stats = {
-            "total_portfolios": 12,
-            "valid_rows": 1234,
-            "filtered_rows": 856,
-        }
+    # Show errors
+    for error in errors:
+        render_error_alert("Validation Error", error)
 
-    st.rerun()
+    # Upload new files button
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col2:
+        if st.button(
+            "Upload New Files",
+            key="upload_new_files_btn",
+            type="primary",
+            use_container_width=True,
+        ):
+            # Reset both files
+            st.session_state.template_file = None
+            st.session_state.bulk_file = None
+            st.session_state.validation_state = "pending"
+            st.rerun()

@@ -6,7 +6,6 @@ Reads CSV files with encoding detection
 import pandas as pd
 from io import BytesIO, StringIO
 from typing import Optional, List
-import chardet
 
 
 class CSVReader:
@@ -19,7 +18,7 @@ class CSVReader:
     # Required columns for Template
     TEMPLATE_COLUMNS = ["Portfolio Name", "Base Bid", "Target CPA"]
 
-    # Required columns for Bulk (46 columns)
+    # Required columns for Bulk (48 columns)
     BULK_COLUMNS = [
         "Product",
         "Entity",
@@ -184,7 +183,7 @@ class CSVReader:
 
     def _detect_encoding(self, file_content: bytes) -> str:
         """
-        Detect file encoding using chardet
+        Detect file encoding - simplified version without chardet
 
         Args:
             file_content: Raw file bytes
@@ -192,30 +191,22 @@ class CSVReader:
         Returns:
             Detected encoding string
         """
-        # Sample first 10KB for encoding detection (faster)
-        sample_size = min(10240, len(file_content))
-        sample = file_content[:sample_size]
+        # Try common encodings in order
+        encodings_to_try = ["utf-8", "latin-1", "cp1252", "iso-8859-1"]
 
-        # Detect encoding
-        result = chardet.detect(sample)
-        encoding = result.get("encoding", "utf-8")
-        confidence = result.get("confidence", 0)
+        for encoding in encodings_to_try:
+            try:
+                # Try to decode a sample
+                sample_size = min(1024, len(file_content))
+                sample = file_content[:sample_size]
+                sample.decode(encoding)
+                return encoding
+            except UnicodeDecodeError:
+                continue
 
-        # If low confidence, default to utf-8
-        if confidence < 0.7:
-            self.warnings.append(
-                f"Low confidence in encoding detection ({confidence:.0%}), using utf-8"
-            )
-            return "utf-8"
-
-        # Map some common encoding names
-        encoding_map = {
-            "ascii": "utf-8",
-            "ISO-8859-1": "latin-1",
-            "Windows-1252": "cp1252",
-        }
-
-        return encoding_map.get(encoding, encoding).lower()
+        # Default to utf-8 if nothing works
+        self.warnings.append("Could not detect encoding, using utf-8")
+        return "utf-8"
 
     def _validate_template_columns(self, df: pd.DataFrame):
         """Validate Template file columns"""

@@ -1,6 +1,6 @@
 """
 Mock Bulk Data
-נתוני דמה לקובץ Bulk עם 46 עמודות
+נתוני דמה לקובץ Bulk עם 48 עמודות
 """
 
 import pandas as pd
@@ -77,7 +77,7 @@ class MockBulkData:
             portfolios: List of portfolio names to use
 
         Returns:
-            DataFrame with 46 columns
+            DataFrame with 48 columns
         """
         if portfolios is None:
             portfolios = [

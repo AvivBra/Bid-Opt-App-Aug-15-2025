@@ -50,16 +50,20 @@ class OutputWriter:
         for sheet_name, df in sheets_data.items():
             df_copy = df.copy()
 
+            # Replace NaN values with empty strings BEFORE any other processing
+            df_copy = df_copy.fillna("")
+
             # Convert ID columns to string to prevent scientific notation
             for col in self.ID_COLUMNS:
                 if col in df_copy.columns:
                     # For ID columns, only convert non-empty values to string
                     mask = df_copy[col] != ""
-                    df_copy.loc[mask, col] = df_copy.loc[mask, col].astype(str)
-                    # Remove any .0 from the end if it exists
-                    df_copy.loc[mask, col] = df_copy.loc[mask, col].str.replace(
-                        r"\.0$", "", regex=True
-                    )
+                    if mask.any():
+                        df_copy.loc[mask, col] = df_copy.loc[mask, col].astype(str)
+                        # Remove any .0 from the end if it exists
+                        df_copy.loc[mask, col] = df_copy.loc[mask, col].str.replace(
+                            r"\.0$", "", regex=True
+                        )
 
             # Ensure Operation column is set to "Update"
             if "Operation" in df_copy.columns:
@@ -134,19 +138,21 @@ class OutputWriter:
             for row_idx in range(2, len(df) + 2):  # Skip header, Excel is 1-indexed
                 cell = worksheet[f"{bid_col_letter}{row_idx}"]
                 try:
-                    bid_value = float(cell.value) if cell.value else 0
-                    # Highlight if bid is out of range
-                    if bid_value < 0.02 or bid_value > 1.25:
+                    if cell.value and cell.value != "":
+                        bid_value = float(cell.value)
+                        # Highlight if bid is out of range
+                        if bid_value < 0.02 or bid_value > 1.25:
+                            for col_idx in range(1, len(df.columns) + 1):
+                                worksheet.cell(
+                                    row=row_idx, column=col_idx
+                                ).fill = self.pink_fill
+                except (ValueError, TypeError):
+                    # If bid value is not a number, highlight the row
+                    if cell.value and cell.value != "":
                         for col_idx in range(1, len(df.columns) + 1):
                             worksheet.cell(
                                 row=row_idx, column=col_idx
                             ).fill = self.pink_fill
-                except (ValueError, TypeError):
-                    # If bid value is not a number, highlight the row
-                    for col_idx in range(1, len(df.columns) + 1):
-                        worksheet.cell(
-                            row=row_idx, column=col_idx
-                        ).fill = self.pink_fill
 
         # Format ID columns as text to prevent Excel from converting to numbers
         for col_name in self.ID_COLUMNS:
@@ -155,7 +161,7 @@ class OutputWriter:
                 col_letter = get_column_letter(col_idx)
                 for row_idx in range(2, len(df) + 2):
                     cell = worksheet[f"{col_letter}{row_idx}"]
-                    if cell.value:
+                    if cell.value and cell.value != "":
                         cell.number_format = "@"  # Text format
 
         # Set alignment for all cells

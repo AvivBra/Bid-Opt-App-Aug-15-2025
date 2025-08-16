@@ -11,7 +11,7 @@ class BulkCleaner:
     """Cleans and filters Bulk file data"""
 
     # Valid entity types to keep
-    VALID_ENTITIES = ["Keyword", "Product Targeting"]
+    VALID_ENTITIES = ["Keyword", "Product Targeting", "Bidding Adjustment"]
 
     # Required state value
     ENABLED_STATE = "enabled"
@@ -26,7 +26,7 @@ class BulkCleaner:
         Clean Bulk DataFrame by applying all filtering rules
 
         Filtering rules:
-        1. Entity must be 'Keyword' or 'Product Targeting'
+        1. Entity must be 'Keyword' or 'Product Targeting' or 'Bidding Adjustment'
         2. State must be 'enabled'
         3. Campaign State must be 'enabled'
         4. Ad Group State must be 'enabled'
@@ -42,31 +42,80 @@ class BulkCleaner:
         self.cleaning_stats = {"original_rows": original_count}
         self.removed_reasons = {}
 
+        # DEBUG: Check for Bidding Adjustment BEFORE filtering
+        if "Entity" in df.columns:
+            entity_counts = df["Entity"].value_counts()
+            print(f"DEBUG BulkCleaner: Entity counts BEFORE filtering:")
+            for entity, count in entity_counts.items():
+                print(f"  {entity}: {count}")
+
+            bidding_adj_before = (df["Entity"] == "Bidding Adjustment").sum()
+            print(
+                f"DEBUG BulkCleaner: Bidding Adjustment rows BEFORE: {bidding_adj_before}"
+            )
+
         # Make a copy to avoid modifying original
         cleaned_df = df.copy()
 
         # Filter 1: Entity type
         if "Entity" in cleaned_df.columns:
             before_count = len(cleaned_df)
+            print(f"DEBUG BulkCleaner: VALID_ENTITIES = {self.VALID_ENTITIES}")
             cleaned_df = cleaned_df[cleaned_df["Entity"].isin(self.VALID_ENTITIES)]
             removed = before_count - len(cleaned_df)
             if removed > 0:
                 self.removed_reasons["invalid_entity"] = removed
                 self.cleaning_stats["after_entity_filter"] = len(cleaned_df)
 
+            # DEBUG: Check after Entity filter
+            bidding_adj_after_entity = (
+                cleaned_df["Entity"] == "Bidding Adjustment"
+            ).sum()
+            print(
+                f"DEBUG BulkCleaner: Bidding Adjustment rows AFTER Entity filter: {bidding_adj_after_entity}"
+            )
+
         # Filter 2: State = enabled
         if "State" in cleaned_df.columns:
             before_count = len(cleaned_df)
+
+            # DEBUG: Check State values for Bidding Adjustment
+            bidding_adj_mask = cleaned_df["Entity"] == "Bidding Adjustment"
+            if bidding_adj_mask.any():
+                ba_states = cleaned_df[bidding_adj_mask]["State"].value_counts()
+                print(f"DEBUG BulkCleaner: Bidding Adjustment State values:")
+                for state, count in ba_states.items():
+                    print(f"  {state}: {count}")
+
             cleaned_df = cleaned_df[cleaned_df["State"] == self.ENABLED_STATE]
             removed = before_count - len(cleaned_df)
             if removed > 0:
                 self.removed_reasons["state_not_enabled"] = removed
                 self.cleaning_stats["after_state_filter"] = len(cleaned_df)
 
+            # DEBUG: Check after State filter
+            bidding_adj_after_state = (
+                cleaned_df["Entity"] == "Bidding Adjustment"
+            ).sum()
+            print(
+                f"DEBUG BulkCleaner: Bidding Adjustment rows AFTER State filter: {bidding_adj_after_state}"
+            )
+
         # Filter 3: Campaign State = enabled
         campaign_state_col = "Campaign State (Informational only)"
         if campaign_state_col in cleaned_df.columns:
             before_count = len(cleaned_df)
+
+            # DEBUG: Check Campaign State for Bidding Adjustment
+            bidding_adj_mask = cleaned_df["Entity"] == "Bidding Adjustment"
+            if bidding_adj_mask.any():
+                ba_campaign_states = cleaned_df[bidding_adj_mask][
+                    campaign_state_col
+                ].value_counts()
+                print(f"DEBUG BulkCleaner: Bidding Adjustment Campaign State values:")
+                for state, count in ba_campaign_states.items():
+                    print(f"  {state}: {count}")
+
             cleaned_df = cleaned_df[
                 cleaned_df[campaign_state_col] == self.ENABLED_STATE
             ]
@@ -75,10 +124,29 @@ class BulkCleaner:
                 self.removed_reasons["campaign_not_enabled"] = removed
                 self.cleaning_stats["after_campaign_filter"] = len(cleaned_df)
 
+            # DEBUG: Check after Campaign State filter
+            bidding_adj_after_campaign = (
+                cleaned_df["Entity"] == "Bidding Adjustment"
+            ).sum()
+            print(
+                f"DEBUG BulkCleaner: Bidding Adjustment rows AFTER Campaign State filter: {bidding_adj_after_campaign}"
+            )
+
         # Filter 4: Ad Group State = enabled
         ad_group_state_col = "Ad Group State (Informational only)"
         if ad_group_state_col in cleaned_df.columns:
             before_count = len(cleaned_df)
+
+            # DEBUG: Check Ad Group State for Bidding Adjustment
+            bidding_adj_mask = cleaned_df["Entity"] == "Bidding Adjustment"
+            if bidding_adj_mask.any():
+                ba_adgroup_states = cleaned_df[bidding_adj_mask][
+                    ad_group_state_col
+                ].value_counts()
+                print(f"DEBUG BulkCleaner: Bidding Adjustment Ad Group State values:")
+                for state, count in ba_adgroup_states.items():
+                    print(f"  {state}: {count}")
+
             cleaned_df = cleaned_df[
                 cleaned_df[ad_group_state_col] == self.ENABLED_STATE
             ]
@@ -86,6 +154,12 @@ class BulkCleaner:
             if removed > 0:
                 self.removed_reasons["ad_group_not_enabled"] = removed
                 self.cleaning_stats["after_ad_group_filter"] = len(cleaned_df)
+
+            # DEBUG: Check after Ad Group State filter
+            bidding_adj_final = (cleaned_df["Entity"] == "Bidding Adjustment").sum()
+            print(
+                f"DEBUG BulkCleaner: Bidding Adjustment rows FINAL: {bidding_adj_final}"
+            )
 
         # Final stats
         self.cleaning_stats["final_rows"] = len(cleaned_df)
@@ -98,6 +172,11 @@ class BulkCleaner:
 
         # Reset index for clean output
         cleaned_df = cleaned_df.reset_index(drop=True)
+
+        # DEBUG: Final check
+        print(
+            f"DEBUG BulkCleaner: Final unique Entity values: {cleaned_df['Entity'].unique() if 'Entity' in cleaned_df.columns else 'No Entity column'}"
+        )
 
         return cleaned_df
 
@@ -125,81 +204,37 @@ class BulkCleaner:
             # Detail removal reasons
             for reason, count in self.removed_reasons.items():
                 reason_text = {
-                    "invalid_entity": f"Entity not Keyword/Product Targeting",
+                    "invalid_entity": f"Entity not Keyword/Product Targeting/Bidding Adjustment",
                     "state_not_enabled": f"State not enabled",
                     "campaign_not_enabled": f"Campaign not enabled",
                     "ad_group_not_enabled": f"Ad Group not enabled",
                 }.get(reason, reason)
-                messages.append(f"  • {count:,} rows: {reason_text}")
+
+                messages.append(f"  - {count:,} rows: {reason_text}")
+
         else:
-            messages.append("No rows filtered out - all rows are valid")
+            messages.append("No rows were filtered out")
 
         summary["messages"] = messages
 
         return summary
 
-    def extract_unique_portfolios(self, df: pd.DataFrame) -> List[str]:
-        """
-        Extract unique portfolio names from cleaned Bulk
-
-        Args:
-            df: Cleaned Bulk DataFrame
-
-        Returns:
-            List of unique portfolio names
-        """
-        portfolio_column = "Portfolio Name (Informational only)"
-
-        if portfolio_column not in df.columns:
-            return []
-
-        # Get unique portfolios, handling NaN values
-        portfolios = df[portfolio_column].dropna().astype(str).str.strip().unique()
-
-        # Filter out empty strings
-        portfolios = [p for p in portfolios if p]
-
-        # Sort for consistent display
-        portfolios.sort()
-
-        return portfolios
-
-    def get_portfolio_statistics(self, df: pd.DataFrame) -> Dict[str, int]:
-        """
-        Get statistics about portfolios in the Bulk
-
-        Args:
-            df: Cleaned Bulk DataFrame
-
-        Returns:
-            Dictionary with portfolio counts
-        """
-        portfolio_column = "Portfolio Name (Informational only)"
-
-        if portfolio_column not in df.columns:
-            return {}
-
-        # Count rows per portfolio
-        portfolio_counts = df[portfolio_column].value_counts().to_dict()
-
-        return portfolio_counts
-
     def validate_cleaning_result(self, cleaned_df: pd.DataFrame) -> Dict[str, Any]:
         """
-        Validate that cleaning produced valid results
+        Validate that cleaned data meets minimum requirements
 
         Args:
             cleaned_df: Cleaned DataFrame
 
         Returns:
-            Validation result
+            Validation result with issues and warnings
         """
         issues = []
         warnings = []
 
         # Check if empty
         if len(cleaned_df) == 0:
-            issues.append("No valid rows after filtering - check your Bulk file")
+            issues.append("No valid rows remaining after cleaning")
 
         # Check if too few rows
         elif len(cleaned_df) < 10:

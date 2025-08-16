@@ -24,6 +24,7 @@ from utils.filename_generator import (
     get_sheet_name,
     get_file_size_display,
 )
+from business.optimizations import get_optimization
 
 
 class FileGenerator:
@@ -58,36 +59,57 @@ class FileGenerator:
             "input_rows": len(cleaned_bulk_df),
             "sheets_created": 0,
             "errors": [],
+            "warnings": [],
         }
 
-        # Prepare data for each optimization
-        optimizations_data = {}
+        # Collect all sheets from all optimizations
+        all_working_sheets = {}
+        all_clean_sheets = {}
 
         for optimization_name in selected_optimizations:
             try:
-                # For now, we only have Zero Sales
-                # Future optimizations will be added here
-                if optimization_name == "Zero Sales":
-                    processed_df = self._apply_zero_sales_optimization(cleaned_bulk_df)
-                else:
-                    # For unimplemented optimizations, use original data
-                    processed_df = cleaned_bulk_df.copy()
+                # Get the optimization instance
+                optimization = get_optimization(optimization_name)
 
-                # Ensure Operation column is set to Update
-                processed_df["Operation"] = "Update"
-
-                # DEBUG: Check columns are preserved
-                print(
-                    f"DEBUG: Processed DataFrame has {len(processed_df.columns)} columns"
+                # Apply the optimization
+                optimized_sheets, stats = optimization.optimize(
+                    cleaned_bulk_df, template_df
                 )
 
-                # Store both clean and working versions
-                optimizations_data[optimization_name] = {
-                    "clean": processed_df.copy(),
-                    "working": processed_df.copy(),  # In future, working might have extra columns
-                }
+                print(
+                    f"DEBUG FileGen: Optimization {optimization_name} returned {len(optimized_sheets)} sheets"
+                )
+                print(f"DEBUG FileGen: Sheet names: {list(optimized_sheets.keys())}")
 
-                self.generation_stats["sheets_created"] += 2
+                # Add stats to generation stats
+                if stats.get("warning_messages"):
+                    self.generation_stats["warnings"].extend(stats["warning_messages"])
+                if stats.get("error_messages"):
+                    self.generation_stats["errors"].extend(stats["error_messages"])
+
+                # Process returned sheets
+                for sheet_name, df in optimized_sheets.items():
+                    print(
+                        f"DEBUG FileGen: Processing sheet {sheet_name} with {len(df)} rows, {len(df.columns)} columns"
+                    )
+
+                    # Ensure Operation column is set to Update
+                    if "Operation" in df.columns:
+                        df["Operation"] = "Update"
+
+                    # Add to appropriate collection
+                    if "Working" in sheet_name:
+                        all_working_sheets[sheet_name] = df
+                    else:
+                        # Add to both clean and working collections
+                        all_clean_sheets[sheet_name] = df
+                        # If no specific Working version, create one
+                        if f"Working {optimization_name}" not in optimized_sheets:
+                            all_working_sheets[f"Working {optimization_name}"] = (
+                                df.copy()
+                            )
+
+                self.generation_stats["sheets_created"] += len(optimized_sheets)
 
             except Exception as e:
                 self.generation_stats["errors"].append(
@@ -96,16 +118,14 @@ class FileGenerator:
                 # Use original data if optimization fails
                 fallback_df = cleaned_bulk_df.copy()
                 fallback_df["Operation"] = "Update"
-                optimizations_data[optimization_name] = {
-                    "clean": fallback_df,
-                    "working": fallback_df,
-                }
+                all_clean_sheets[f"Clean {optimization_name}"] = fallback_df
+                all_working_sheets[f"Working {optimization_name}"] = fallback_df
 
-        # Generate Working file (Clean + Working sheets)
-        working_file = self._generate_working_file(optimizations_data)
+        # Generate Working file (all sheets)
+        working_file = self.output_writer.create_working_file(all_working_sheets)
 
-        # Generate Clean file (Clean sheets only)
-        clean_file = self._generate_clean_file(optimizations_data)
+        # Generate Clean file (clean sheets only)
+        clean_file = self.output_writer.create_clean_file(all_clean_sheets)
 
         # Calculate final stats
         self.generation_stats["end_time"] = datetime.now()
@@ -121,78 +141,6 @@ class FileGenerator:
         self.generation_stats["clean_file"] = clean_stats
 
         return working_file, clean_file, self.generation_stats
-
-    def _generate_working_file(
-        self, optimizations_data: Dict[str, Dict[str, pd.DataFrame]]
-    ) -> BytesIO:
-        """
-        Generate Working file with both Clean and Working sheets
-
-        Args:
-            optimizations_data: Dict with optimization data
-
-        Returns:
-            BytesIO buffer with Excel file
-        """
-        # Create Working file
-        working_file = self.output_writer.create_working_file(optimizations_data)
-
-        return working_file
-
-    def _generate_clean_file(
-        self, optimizations_data: Dict[str, Dict[str, pd.DataFrame]]
-    ) -> BytesIO:
-        """
-        Generate Clean file with only Clean sheets
-
-        Args:
-            optimizations_data: Dict with optimization data
-
-        Returns:
-            BytesIO buffer with Excel file
-        """
-        # Extract only clean DataFrames
-        clean_data = {name: data["clean"] for name, data in optimizations_data.items()}
-
-        # Create Clean file
-        clean_file = self.output_writer.create_clean_file(clean_data)
-
-        return clean_file
-
-    def _apply_zero_sales_optimization(self, df: pd.DataFrame) -> pd.DataFrame:
-        """
-        Apply Zero Sales optimization (placeholder for now)
-        Real implementation will be in Zero Sales optimization module
-
-        Args:
-            df: Input DataFrame with ALL 48 columns from Bulk
-
-        Returns:
-            Optimized DataFrame with ALL columns preserved
-        """
-        # Make a copy to avoid modifying original - KEEPS ALL COLUMNS
-        optimized_df = df.copy()
-
-        # DEBUG: Print column info
-        print(f"DEBUG: Input DataFrame has {len(optimized_df.columns)} columns")
-        print(f"DEBUG: First 5 columns: {list(optimized_df.columns[:5])}")
-
-        # Simple logic: Set Bid to 0.02 for rows with Sales = 0
-        if "Sales" in optimized_df.columns and "Bid" in optimized_df.columns:
-            zero_sales_mask = optimized_df["Sales"] == 0
-            optimized_df.loc[zero_sales_mask, "Bid"] = 0.02
-
-            # Track how many rows were modified
-            modified_count = zero_sales_mask.sum()
-            self.generation_stats[f"zero_sales_modified"] = modified_count
-
-        # Ensure Operation column is Update (but keep all other columns)
-        if "Operation" in optimized_df.columns:
-            optimized_df["Operation"] = "Update"
-
-        print(f"DEBUG: Output DataFrame has {len(optimized_df.columns)} columns")
-
-        return optimized_df
 
     def generate_filenames(self) -> Tuple[str, str]:
         """
@@ -233,64 +181,14 @@ class FileGenerator:
                 f"Clean file: {clean_size}, {summary['clean_file']['sheet_count']} sheets"
             )
 
+        # Add warnings
+        if summary.get("warnings"):
+            for warning in summary["warnings"]:
+                messages.append(warning)
+
         if summary.get("errors"):
-            messages.append(f"Encountered {len(summary['errors'])} errors")
+            messages.append(f"Errors: {len(summary['errors'])}")
 
         summary["messages"] = messages
 
         return summary
-
-    def validate_output_files(
-        self, working_file: BytesIO, clean_file: BytesIO
-    ) -> Dict[str, Any]:
-        """
-        Validate that output files are correct
-
-        Args:
-            working_file: Working file buffer
-            clean_file: Clean file buffer
-
-        Returns:
-            Validation result
-        """
-        issues = []
-
-        try:
-            # Check Working file
-            working_file.seek(0)
-            working_excel = pd.ExcelFile(working_file)
-            working_sheets = working_excel.sheet_names
-
-            # Should have 2 sheets per optimization
-            if len(working_sheets) % 2 != 0:
-                issues.append(
-                    "Working file should have even number of sheets (Clean + Working pairs)"
-                )
-
-            # Check Clean file
-            clean_file.seek(0)
-            clean_excel = pd.ExcelFile(clean_file)
-            clean_sheets = clean_excel.sheet_names
-
-            # Clean should have half the sheets of Working
-            if len(clean_sheets) * 2 != len(working_sheets):
-                issues.append("Clean file should have half the sheets of Working file")
-
-            # Check that all sheets have Operation = Update
-            for sheet_name in working_sheets:
-                df = pd.read_excel(working_file, sheet_name=sheet_name)
-                if "Operation" in df.columns:
-                    non_update = df[df["Operation"] != "Update"]
-                    if len(non_update) > 0:
-                        issues.append(
-                            f"Sheet '{sheet_name}' has {len(non_update)} rows without Operation='Update'"
-                        )
-
-            # Reset file positions
-            working_file.seek(0)
-            clean_file.seek(0)
-
-        except Exception as e:
-            issues.append(f"Validation error: {str(e)}")
-
-        return {"is_valid": len(issues) == 0, "issues": issues}

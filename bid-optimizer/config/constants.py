@@ -67,7 +67,7 @@ BULK_COLUMNS = [
 ]
 
 # Filtering criteria
-VALID_ENTITIES = ["Keyword", "Product Targeting"]
+VALID_ENTITIES = ["Keyword", "Product Targeting", "Bidding Adjustment"]
 ENABLED_STATE = "enabled"
 
 # Bid limits

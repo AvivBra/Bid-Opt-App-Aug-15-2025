@@ -173,18 +173,18 @@ class FileValidator:
         # Check for data issues
         if "Entity" in df.columns:
             entity_values = df["Entity"].value_counts()
-            valid_entities = ["Keyword", "Product Targeting"]
+            valid_entities = ["Keyword", "Product Targeting", "Bidding Adjustment"]
             valid_count = sum(entity_values.get(e, 0) for e in valid_entities)
 
             if valid_count == 0:
                 self.warnings.append(
-                    "No rows with Entity = 'Keyword' or 'Product Targeting' found"
+                    "No rows with Entity = 'Keyword' or 'Product Targeting' or 'Bidding Adjustment' found"
                 )
             else:
                 other_count = len(df) - valid_count
                 if other_count > 0:
                     self.warnings.append(
-                        f"{other_count} rows will be filtered out (Entity not Keyword/Product Targeting)"
+                        f"{other_count} rows will be filtered out (Entity not Keyword/Product Targeting/Bidding Adjustment)"
                     )
 
         if "State" in df.columns:

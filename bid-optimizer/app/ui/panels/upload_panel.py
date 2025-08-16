@@ -16,6 +16,24 @@ from data.template_generator import TemplateGenerator
 def render_upload_panel():
     """Render the upload panel"""
 
+    # SECTION 1: Optimization checklist - with same header style as Upload Files
+    st.markdown(
+        """
+    <div class='section-container'>
+        <h2 class='section-header'>Select Optimizations</h2>
+    """,
+        unsafe_allow_html=True,
+    )
+
+    render_optimization_checklist()
+
+    # Close first div
+    st.markdown("</div>", unsafe_allow_html=True)
+
+    # Space between sections
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    # SECTION 2: Upload Files - same header style
     st.markdown(
         """
     <div class='section-container'>
@@ -49,15 +67,11 @@ def render_upload_panel():
 
     st.markdown("<br>", unsafe_allow_html=True)
 
-    # Optimization checklist
-    st.markdown("### Select Optimizations")
-    render_optimization_checklist()
-
-    # Close div
-    st.markdown("</div>", unsafe_allow_html=True)
-
     # Display file status
     display_file_status()
+
+    # Close second div
+    st.markdown("</div>", unsafe_allow_html=True)
 
 
 def display_file_status():

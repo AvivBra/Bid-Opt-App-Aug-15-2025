@@ -70,17 +70,20 @@ class FileValidator:
             base_bid = row["Base Bid"]
             if pd.isna(base_bid):
                 self.errors.append(f"Base Bid is required in row {row_num}")
-            elif str(base_bid).lower() != "ignore":
-                try:
-                    bid_value = float(base_bid)
-                    if bid_value < 0 or bid_value > self.MAX_BID:
+            else:
+                # Convert to string and check if it's "ignore" (case-insensitive)
+                base_bid_str = str(base_bid).strip().lower()
+                if base_bid_str != "ignore":
+                    try:
+                        bid_value = float(base_bid)
+                        if bid_value < 0 or bid_value > self.MAX_BID:
+                            self.errors.append(
+                                f"Base Bid must be between 0 and {self.MAX_BID} in row {row_num}"
+                            )
+                    except (ValueError, TypeError):
                         self.errors.append(
-                            f"Base Bid must be between 0 and {self.MAX_BID} in row {row_num}"
+                            f"Invalid Base Bid value in row {row_num} - must be number or 'Ignore'"
                         )
-                except (ValueError, TypeError):
-                    self.errors.append(
-                        f"Invalid Base Bid value in row {row_num} - must be number or 'Ignore'"
-                    )
 
             # Check Target CPA (optional)
             target_cpa = row["Target CPA"]
@@ -100,8 +103,8 @@ class FileValidator:
         if len(duplicates) > 0:
             self.errors.append(f"Duplicate portfolio names: {', '.join(duplicates)}")
 
-        # Check if all portfolios are ignored
-        non_ignored = df[df["Base Bid"] != "Ignore"]
+        # Check if all portfolios are ignored (now case-insensitive)
+        non_ignored = df[df["Base Bid"].astype(str).str.strip().str.lower() != "ignore"]
         if len(non_ignored) == 0:
             self.errors.append("All portfolios marked as 'Ignore' - cannot proceed")
 

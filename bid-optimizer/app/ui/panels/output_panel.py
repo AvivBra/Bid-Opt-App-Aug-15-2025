@@ -37,18 +37,64 @@ def render_output_panel():
 def render_processing_state():
     """Render processing state with progress bar"""
 
-    # Show animated progress bar
-    progress_placeholder = animate_progress(duration=3.0)
+    # Check if we have real data to process
+    if st.session_state.get("cleaned_bulk_df") is not None:
+        # Real processing with actual data
+        cleaned_df = st.session_state.get("cleaned_bulk_df")
+        selected_optimizations = st.session_state.get(
+            "selected_optimizations", ["Zero Sales"]
+        )
 
-    # After animation, transition to complete state
+        print(f"DEBUG [output_panel]: Starting real processing")
+        print(f"DEBUG [output_panel]: Cleaned DF has {len(cleaned_df.columns)} columns")
+        print(f"DEBUG [output_panel]: Selected optimizations: {selected_optimizations}")
+
+        # Import file generator
+        import sys
+        import os
+
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        project_root = os.path.dirname(os.path.dirname(os.path.dirname(current_dir)))
+        if project_root not in sys.path:
+            sys.path.insert(0, project_root)
+
+        from business.processors.file_generator import FileGenerator
+        from utils.filename_generator import generate_output_filename
+
+        # Generate real files
+        generator = FileGenerator()
+        working_file, clean_file, stats = generator.generate_output_files(
+            cleaned_df, selected_optimizations, st.session_state.get("template_df")
+        )
+
+        # Store files in session state
+        st.session_state.output_files = {
+            "working": working_file.getvalue(),
+            "clean": clean_file.getvalue(),
+            "working_filename": generate_output_filename("Working"),
+            "clean_filename": generate_output_filename("Clean"),
+        }
+
+        # Store stats
+        st.session_state.processing_stats = stats
+
+        print(f"DEBUG [output_panel]: Files generated successfully")
+    else:
+        # Fallback to mock data
+        print(f"DEBUG [output_panel]: Using mock data (no cleaned_bulk_df)")
+        # Show animated progress bar
+        progress_placeholder = animate_progress(duration=3.0)
+
+        st.session_state.processing_stats = {
+            "rows_processed": 1234,
+            "rows_modified": 456,
+            "calculation_errors": 7,
+            "high_bids": 3,
+            "low_bids": 2,
+        }
+
+    # After processing, transition to complete state
     st.session_state.current_state = "complete"
-    st.session_state.processing_stats = {
-        "rows_processed": 1234,
-        "rows_modified": 456,
-        "calculation_errors": 7,
-        "high_bids": 3,
-        "low_bids": 2,
-    }
     time.sleep(0.5)
     st.rerun()
 

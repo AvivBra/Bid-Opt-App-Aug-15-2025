@@ -8,6 +8,7 @@ from typing import Dict, Any, Optional, Tuple
 from io import BytesIO
 import sys
 import os
+import traceback
 
 # Add project root to path
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -60,6 +61,11 @@ class Orchestrator:
         }
 
         try:
+            # DEBUG: Print initial info
+            print("DEBUG: Starting validation")
+            print(f"DEBUG: Template file type: {type(template_file)}")
+            print(f"DEBUG: Bulk file type: {type(bulk_file)}")
+
             # Read Template file
             template_df = self._read_file(template_file, "template")
             if template_df is None:
@@ -144,6 +150,8 @@ class Orchestrator:
             result["cleaned_bulk_df"] = cleaned_bulk_df
 
         except Exception as e:
+            print(f"DEBUG: Validation error: {str(e)}")
+            print(f"DEBUG: Full traceback:\n{traceback.format_exc()}")
             result["errors"].append(f"Validation error: {str(e)}")
             result["is_valid"] = False
 
@@ -164,18 +172,39 @@ class Orchestrator:
             # Check file extension from name if available
             file_name = getattr(file, "name", "unknown")
 
+            # DEBUG: Print file info
+            print(f"DEBUG: Reading {file_type} file: {file_name}")
+            print(f"DEBUG: File size: {len(file.getvalue())} bytes")
+
             if file_name.endswith(".xlsx"):
-                return self.excel_reader.read(file, file_type)
+                df = self.excel_reader.read(file, file_type)
+                print(f"DEBUG: Successfully read Excel file with {len(df)} rows")
+                print(f"DEBUG: Columns: {list(df.columns)}")
+                if file_type == "template" and len(df) > 0:
+                    print(f"DEBUG: First row: {df.iloc[0].to_dict()}")
+                return df
             elif file_name.endswith(".csv"):
-                return self.csv_reader.read(file, file_type)
+                df = self.csv_reader.read(file, file_type)
+                print(f"DEBUG: Successfully read CSV file with {len(df)} rows")
+                print(f"DEBUG: Columns: {list(df.columns)}")
+                return df
             else:
                 # Try Excel first, then CSV
                 try:
-                    return self.excel_reader.read(file, file_type)
-                except:
+                    print("DEBUG: File extension not recognized, trying Excel reader")
+                    df = self.excel_reader.read(file, file_type)
+                    print(f"DEBUG: Successfully read as Excel with {len(df)} rows")
+                    return df
+                except Exception as excel_error:
+                    print(f"DEBUG: Excel read failed: {str(excel_error)}")
                     file.seek(0)  # Reset file pointer
-                    return self.csv_reader.read(file, file_type)
+                    print("DEBUG: Trying CSV reader")
+                    df = self.csv_reader.read(file, file_type)
+                    print(f"DEBUG: Successfully read as CSV with {len(df)} rows")
+                    return df
 
         except Exception as e:
-            print(f"Error reading file: {str(e)}")
+            print(f"DEBUG: Error reading file: {str(e)}")
+            print(f"DEBUG: Error type: {type(e).__name__}")
+            print(f"DEBUG: Full traceback:\n{traceback.format_exc()}")
             return None

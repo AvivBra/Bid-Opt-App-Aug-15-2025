@@ -215,3 +215,39 @@ class BulkCleaner:
                 warnings.append("Only 1 portfolio found in cleaned data")
 
         return {"is_valid": len(issues) == 0, "issues": issues, "warnings": warnings}
+
+    def filter_bulk_by_ignored(
+        self, bulk_df: pd.DataFrame, template_df: pd.DataFrame
+    ) -> pd.DataFrame:
+        """
+        Remove rows from Bulk that belong to ignored portfolios
+
+        Args:
+            bulk_df: Bulk DataFrame (already cleaned)
+            template_df: Template DataFrame
+
+        Returns:
+            Filtered DataFrame without ignored portfolio rows
+        """
+        # Get list of ignored portfolios (case-insensitive comparison)
+        ignored = template_df[
+            template_df["Base Bid"].astype(str).str.strip().str.lower() == "ignore"
+        ]["Portfolio Name"].tolist()
+
+        if not ignored:
+            return bulk_df
+
+        # Filter out ignored portfolios
+        portfolio_column = "Portfolio Name (Informational only)"
+        if portfolio_column in bulk_df.columns:
+            filtered_df = bulk_df[~bulk_df[portfolio_column].isin(ignored)].copy()
+
+            removed_count = len(bulk_df) - len(filtered_df)
+            if removed_count > 0:
+                self.removed_reasons["ignored_portfolios"] = removed_count
+                messages = self.get_cleaning_summary().get("messages", [])
+                messages.append(f"Removed {removed_count} rows from ignored portfolios")
+
+            return filtered_df
+
+        return bulk_df

@@ -78,14 +78,24 @@ def render_download_buttons():
 def render_working_download():
     """Render Working File download button"""
 
-    # Generate filename
-    filename = generate_filename("Working")
+    # Check if we have real files in session state
+    if st.session_state.get("output_files", {}).get("working"):
+        # Use real file from session state
+        file_data = st.session_state.output_files["working"]
+        filename = st.session_state.output_files.get(
+            "working_filename", generate_filename("Working")
+        )
 
-    # Create mock file
-    file_data = create_mock_excel_file("Working")
-
-    # Get file size
-    file_size = len(file_data.getvalue()) / 1024  # KB
+        # Get file size
+        if isinstance(file_data, bytes):
+            file_size = len(file_data) / 1024  # KB
+        else:
+            file_size = len(file_data.getvalue()) / 1024  # KB
+    else:
+        # Fallback to mock file
+        filename = generate_filename("Working")
+        file_data = create_mock_excel_file("Working")
+        file_size = len(file_data.getvalue()) / 1024  # KB
 
     # Display file info
     st.markdown(f"**Working File**")
@@ -108,14 +118,24 @@ def render_working_download():
 def render_clean_download():
     """Render Clean File download button"""
 
-    # Generate filename
-    filename = generate_filename("Clean")
+    # Check if we have real files in session state
+    if st.session_state.get("output_files", {}).get("clean"):
+        # Use real file from session state
+        file_data = st.session_state.output_files["clean"]
+        filename = st.session_state.output_files.get(
+            "clean_filename", generate_filename("Clean")
+        )
 
-    # Create mock file
-    file_data = create_mock_excel_file("Clean")
-
-    # Get file size
-    file_size = len(file_data.getvalue()) / 1024  # KB
+        # Get file size
+        if isinstance(file_data, bytes):
+            file_size = len(file_data) / 1024  # KB
+        else:
+            file_size = len(file_data.getvalue()) / 1024  # KB
+    else:
+        # Fallback to mock file
+        filename = generate_filename("Clean")
+        file_data = create_mock_excel_file("Clean")
+        file_size = len(file_data.getvalue()) / 1024  # KB
 
     # Display file info
     st.markdown(f"**Clean File**")

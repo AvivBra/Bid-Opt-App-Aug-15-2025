@@ -10,11 +10,26 @@ from typing import Dict, List, Any, Set
 class PortfolioValidator:
     """Validates portfolio consistency between Template and Bulk files"""
 
+    # Portfolios that are allowed to be missing (won't block processing)
+    ALLOWED_MISSING_PORTFOLIOS = {
+        "Flat 30",
+        "Flat 15 | Opt",
+        "Flat 20 | Opt",
+        "Flat 20",
+        "Flat 40 | Opt",
+        "Flat 30 | Opt",
+        "Flat 25 | Opt",
+        "Flat 15",
+        "Flat 40",
+        "Flat 25",
+    }
+
     def __init__(self):
         """Initialize validator"""
         self.missing_portfolios = []
         self.excess_portfolios = []
         self.ignored_portfolios = []
+        self.allowed_missing = []
         self.validation_messages = []
 
     def validate_portfolios(
@@ -34,6 +49,7 @@ class PortfolioValidator:
         self.missing_portfolios = []
         self.excess_portfolios = []
         self.ignored_portfolios = []
+        self.allowed_missing = []
         self.validation_messages = []
 
         # Get portfolios from Template (excluding ignored)
@@ -42,11 +58,13 @@ class PortfolioValidator:
 
         for _, row in template_df.iterrows():
             portfolio_name = str(row["Portfolio Name"]).strip()
-            base_bid = str(row["Base Bid"]).strip()
+            base_bid = (
+                str(row["Base Bid"]).strip().lower()
+            )  # Convert to lowercase for comparison
 
             template_all.add(portfolio_name)
 
-            if base_bid.lower() == "ignore":
+            if base_bid == "ignore":
                 self.ignored_portfolios.append(portfolio_name)
             else:
                 template_portfolios.add(portfolio_name)
@@ -65,23 +83,36 @@ class PortfolioValidator:
             )
 
         # Find missing portfolios (in Bulk but not in Template)
-        self.missing_portfolios = list(bulk_portfolios - template_portfolios)
+        all_missing = list(bulk_portfolios - template_portfolios)
 
         # Remove ignored portfolios from missing list
         ignored_set = set(self.ignored_portfolios)
-        self.missing_portfolios = [
-            p for p in self.missing_portfolios if p not in ignored_set
-        ]
+        all_missing = [p for p in all_missing if p not in ignored_set]
+
+        # Separate missing portfolios into blocking and allowed
+        self.missing_portfolios = []
+        self.allowed_missing = []
+
+        for portfolio in all_missing:
+            if portfolio in self.ALLOWED_MISSING_PORTFOLIOS:
+                self.allowed_missing.append(portfolio)
+            else:
+                self.missing_portfolios.append(portfolio)
 
         # Find excess portfolios (in Template but not in Bulk)
         self.excess_portfolios = list(template_portfolios - bulk_portfolios)
 
         # Create validation result
+        # Only block if there are missing portfolios that are NOT in the allowed list
         is_valid = len(self.missing_portfolios) == 0
 
         # Generate messages
         if is_valid:
-            if self.ignored_portfolios:
+            if self.allowed_missing:
+                self.validation_messages.append(
+                    f"✓ All required portfolios valid ({len(self.allowed_missing)} optional portfolios missing)"
+                )
+            elif self.ignored_portfolios:
                 self.validation_messages.append("✓ All portfolios valid (some ignored)")
             else:
                 self.validation_messages.append("✓ All portfolios valid")
@@ -89,23 +120,31 @@ class PortfolioValidator:
                     "All portfolios in Bulk file have Base Bid values in Template"
                 )
         else:
-            # Add count to the error message
+            # Add count to the error message - only for blocking portfolios
             missing_count = len(self.missing_portfolios)
             self.validation_messages.append(
-                f"❌ Missing portfolios found ({missing_count})"
+                f"❌ Missing required portfolios found ({missing_count})"
             )
 
             if self.missing_portfolios:
                 # Show first 5 portfolios with count
                 if missing_count <= 5:
                     self.validation_messages.append(
-                        f"The following {missing_count} portfolios are in Bulk but not in Template: {', '.join(self.missing_portfolios)}"
+                        f"The following {missing_count} required portfolios are in Bulk but not in Template: {', '.join(self.missing_portfolios)}"
                     )
                 else:
                     self.validation_messages.append(
-                        f"The following {missing_count} portfolios are in Bulk but not in Template: {', '.join(self.missing_portfolios[:5])}"
+                        f"The following {missing_count} required portfolios are in Bulk but not in Template: {', '.join(self.missing_portfolios[:5])}"
                     )
                     self.validation_messages.append(f"... and {missing_count - 5} more")
+
+        # Add info about allowed missing portfolios
+        if self.allowed_missing:
+            allowed_count = len(self.allowed_missing)
+            self.validation_messages.append(
+                f"ℹ️ {allowed_count} optional portfolios missing (not blocking): {', '.join(self.allowed_missing[:3])}"
+                + ("..." if allowed_count > 3 else "")
+            )
 
         # Add warnings for ignored portfolios with count
         if self.ignored_portfolios:
@@ -160,6 +199,7 @@ class PortfolioValidator:
             "bulk_total_rows": len(cleaned_bulk_df),
             "portfolio_row_counts": portfolio_row_counts,
             "missing_count": len(self.missing_portfolios),
+            "allowed_missing_count": len(self.allowed_missing),
             "excess_count": len(self.excess_portfolios),
             "ignored_count": len(self.ignored_portfolios),
         }
@@ -205,11 +245,13 @@ class PortfolioValidator:
         return {
             "is_valid": is_valid,
             "missing_portfolios": self.missing_portfolios.copy(),
+            "allowed_missing_portfolios": self.allowed_missing.copy(),
             "excess_portfolios": self.excess_portfolios.copy(),
             "ignored_portfolios": self.ignored_portfolios.copy(),
             "messages": self.validation_messages.copy(),
             "portfolio_counts": {
                 "missing": len(self.missing_portfolios),
+                "allowed_missing": len(self.allowed_missing),
                 "excess": len(self.excess_portfolios),
                 "ignored": len(self.ignored_portfolios),
             },

@@ -139,10 +139,10 @@ class ZeroSalesOptimization(BaseOptimization):
         # Update stats
         self.stats["rows_modified"] = len(filtered_df)
 
-        # Return sheets
+        # Return sheets - make sure helper columns are included
         result = {
-            "Clean Zero Sales": filtered_df,
-            "Working Zero Sales": filtered_df.copy(),  # For now, same as Clean
+            "Clean Zero Sales": filtered_df.copy(),  # Include all columns with helper columns
+            "Working Zero Sales": filtered_df.copy(),  # Include all columns with helper columns
         }
 
         # Add Bidding Adjustment sheet if it has data
@@ -184,19 +184,31 @@ class ZeroSalesOptimization(BaseOptimization):
     ) -> pd.DataFrame:
         """
         Step 3: Add helper columns to main DataFrame
+        IMPORTANT: Columns must be inserted to the LEFT of Bid column
+        Order: ... | Max BA | Base Bid | Target CPA | Adj. CPA | Old Bid | Bid | ...
         """
+        # Make a copy to avoid modifying original
+        df_copy = main_df.copy()
+
+        # Find the position of Bid column
+        if "Bid" not in df_copy.columns:
+            print("ERROR: Bid column not found!")
+            return df_copy
+
+        bid_column_index = df_copy.columns.get_loc("Bid")
+
         # FIRST - Store old bid values BEFORE any changes
-        old_bid_values = main_df["Bid"].values.copy()
+        old_bid_values = df_copy["Bid"].values.copy()
 
         # Calculate Max BA for each Campaign ID
-        max_ba_values = self._calculate_max_ba(main_df, bidding_adj_df)
+        max_ba_values = self._calculate_max_ba(df_copy, bidding_adj_df)
 
         # Get Base Bid and Target CPA from template
         base_bid_values = []
         target_cpa_values = []
 
         portfolio_col = "Portfolio Name (Informational only)"
-        for _, row in main_df.iterrows():
+        for _, row in df_copy.iterrows():
             portfolio = row.get(portfolio_col, "")
             base_bid = self.get_portfolio_value(
                 portfolio, template_df, "Base Bid", default=0.02
@@ -214,108 +226,118 @@ class ZeroSalesOptimization(BaseOptimization):
 
         # Calculate derived columns
         adj_cpa_values = []
-        for i in range(len(main_df)):
+        for i in range(len(df_copy)):
             if pd.notna(target_cpa_values[i]):
                 adj_cpa = target_cpa_values[i] * (1 + max_ba_values[i] / 100)
             else:
                 adj_cpa = None
             adj_cpa_values.append(adj_cpa)
 
-        # Create helper columns dictionary
-        helper_columns = {
-            "Max BA": max_ba_values,
-            "Base Bid": base_bid_values,
-            "Target CPA": target_cpa_values,
-            "Adj. CPA": adj_cpa_values,
-            "Old Bid": old_bid_values,  # Now this has the original values
-            "calc1": [0] * len(main_df),  # Will be calculated in next step
-            "calc2": [0] * len(main_df),  # Will be calculated in next step
-        }
+        # Calculate calc1 and calc2
+        calc1_values = old_bid_values * 0.75  # 25% reduction
+        calc2_values = base_bid_values
 
-        # Add helper columns to DataFrame
-        return self.add_helper_columns(main_df, helper_columns)
+        # Insert helper columns to the LEFT of Bid column
+        # Insert in reverse order so they appear in correct order
+        # Final order should be: Max BA | Base Bid | Target CPA | Adj. CPA | calc1 | calc2 | Old Bid | Bid
+        df_copy.insert(bid_column_index, "Old Bid", old_bid_values)
+        df_copy.insert(bid_column_index, "calc2", calc2_values)
+        df_copy.insert(bid_column_index, "calc1", calc1_values)
+        df_copy.insert(bid_column_index, "Adj. CPA", adj_cpa_values)
+        df_copy.insert(bid_column_index, "Target CPA", target_cpa_values)
+        df_copy.insert(bid_column_index, "Base Bid", base_bid_values)
+        df_copy.insert(bid_column_index, "Max BA", max_ba_values)
+
+        return df_copy
 
     def _calculate_max_ba(
         self, main_df: pd.DataFrame, bidding_adj_df: pd.DataFrame
     ) -> List[float]:
         """
         Calculate Max BA for each row based on Campaign ID
+
+        Returns list of Max BA values aligned with main_df rows
         """
         max_ba_values = []
 
         if len(bidding_adj_df) == 0:
-            # No Bidding Adjustment rows - use default value of 1
-            return [1.0] * len(main_df)
+            # No Bidding Adjustments, return 0 for all
+            return [0.0] * len(main_df)
 
-        # Create lookup dictionary for max percentage by Campaign ID
-        max_ba_lookup = {}
-        if "Percentage" in bidding_adj_df.columns:
-            grouped = bidding_adj_df.groupby("Campaign ID")["Percentage"]
-            max_ba_lookup = grouped.max().to_dict()
+        # Get max percentage per campaign
+        ba_max = bidding_adj_df.groupby("Campaign ID")["Percentage"].max().to_dict()
 
-        # Get Max BA for each row
+        # Map to main dataframe
         for _, row in main_df.iterrows():
-            campaign_id = row.get("Campaign ID", "")
-            max_ba = max_ba_lookup.get(campaign_id, 1.0)  # Default to 1 if not found
+            campaign_id = row.get("Campaign ID")
+            max_ba = ba_max.get(campaign_id, 0)
             max_ba_values.append(max_ba)
 
         return max_ba_values
 
     def _calculate_bids(self, df: pd.DataFrame) -> pd.DataFrame:
         """
-        Step 4: Calculate new bids based on 4 cases
+        Step 4: Calculate new bid values based on helper columns
+        Formula: New Bid = MAX(calc1, calc2)
         """
-        df = df.copy()
+        # Calculate new bid as max of calc1 and calc2
+        df["Bid"] = df[["calc1", "calc2"]].max(axis=1)
 
-        for idx in df.index:
-            row = df.loc[idx]
-
-            # Get values
-            target_cpa = row.get("Target CPA")
-            campaign_name = row.get("Campaign Name (Informational only)", "")
-            base_bid = row.get("Base Bid", 0.02)
-            max_ba = row.get("Max BA", 1.0)
-            adj_cpa = row.get("Adj. CPA")
-            clicks = row.get("Clicks", 0)
-
-            # Check for "up and" in campaign name
-            has_up_and = "up and" in str(campaign_name).lower()
-
-            # Determine which case applies
-            if pd.isna(target_cpa):
-                # Cases A & B: No Target CPA
-                if has_up_and:
-                    # Case A: No Target CPA + "up and"
-                    new_bid = base_bid * 0.5
-                else:
-                    # Case B: No Target CPA + No "up and"
-                    new_bid = base_bid
-            else:
-                # Cases C & D: Has Target CPA
-                if has_up_and:
-                    # Case C: Has Target CPA + "up and"
-                    calc1 = (adj_cpa * 0.5) / (clicks + 1) if adj_cpa else 0
-                    calc2 = calc1 - (base_bid * 0.5)
-
-                    if calc1 <= 0:
-                        new_bid = calc2
-                    else:
-                        new_bid = base_bid * 0.5
-                else:
-                    # Case D: Has Target CPA + No "up and"
-                    calc1 = adj_cpa / (clicks + 1) if adj_cpa else 0
-                    calc2 = calc1 - (base_bid / (1 + max_ba / 100))
-
-                    if calc1 <= 0:
-                        new_bid = calc2
-                    else:
-                        new_bid = base_bid / (1 + max_ba / 100)
-
-                # Store calc values
-                df.at[idx, "calc1"] = calc1
-                df.at[idx, "calc2"] = calc2
-
-            # Apply the new bid
-            df.at[idx, "Bid"] = new_bid
+        # Round to 2 decimal places
+        df["Bid"] = df["Bid"].round(2)
 
         return df
+
+    def check_bid_limits(self, df: pd.DataFrame) -> Tuple[int, int, int]:
+        """
+        Check if bids are within valid range [0.02, 1.25]
+
+        Returns:
+            Tuple of (below_count, above_count, error_count)
+        """
+        below_count = (df["Bid"] < 0.02).sum()
+        above_count = (df["Bid"] > 1.25).sum()
+        error_count = df["Bid"].isna().sum()
+
+        # Highlight problematic rows
+        if below_count > 0:
+            df.loc[df["Bid"] < 0.02, "Bid_Status"] = "BELOW_MINIMUM"
+
+        if above_count > 0:
+            df.loc[df["Bid"] > 1.25, "Bid_Status"] = "ABOVE_MAXIMUM"
+
+        if error_count > 0:
+            df.loc[df["Bid"].isna(), "Bid_Status"] = "CALCULATION_ERROR"
+
+        return below_count, above_count, error_count
+
+    def get_portfolio_value(
+        self,
+        portfolio_name: str,
+        template_df: pd.DataFrame,
+        column: str,
+        default: Any = None,
+    ) -> Any:
+        """
+        Get value from template for a specific portfolio
+
+        Args:
+            portfolio_name: Name of portfolio
+            template_df: Template DataFrame
+            column: Column to get value from
+            default: Default value if not found
+
+        Returns:
+            Value from template or default
+        """
+        if portfolio_name and column in template_df.columns:
+            matches = template_df[template_df["Portfolio Name"] == portfolio_name]
+            if not matches.empty:
+                value = matches.iloc[0][column]
+                # Convert to numeric if possible
+                if pd.notna(value):
+                    try:
+                        return float(value)
+                    except (ValueError, TypeError):
+                        return value
+        return default

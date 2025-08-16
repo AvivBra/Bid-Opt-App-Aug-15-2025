@@ -97,11 +97,19 @@ class FileGenerator:
                     if "Operation" in df.columns:
                         df["Operation"] = "Update"
 
-                    # Add to appropriate collection
-                    if "Working" in sheet_name:
+                    # IMPORTANT: Check if this is a Bidding Adjustment sheet
+                    if "Bidding Adjustment" in sheet_name:
+                        # Bidding Adjustment sheets go to BOTH files
+                        all_working_sheets[sheet_name] = df
+                        all_clean_sheets[sheet_name] = df
+                        print(
+                            f"DEBUG FileGen: Added {sheet_name} to BOTH Working and Clean files"
+                        )
+                    elif "Working" in sheet_name:
+                        # Working sheets only go to Working file
                         all_working_sheets[sheet_name] = df
                     else:
-                        # Add to both clean and working collections
+                        # Clean sheets go to both files
                         all_clean_sheets[sheet_name] = df
                         # If no specific Working version, create one
                         if f"Working {optimization_name}" not in optimized_sheets:

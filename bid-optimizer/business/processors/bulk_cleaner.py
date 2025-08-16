@@ -27,9 +27,9 @@ class BulkCleaner:
 
         Filtering rules:
         1. Entity must be 'Keyword' or 'Product Targeting' or 'Bidding Adjustment'
-        2. State must be 'enabled'
-        3. Campaign State must be 'enabled'
-        4. Ad Group State must be 'enabled'
+        2. State must be 'enabled' (EXCEPT for Bidding Adjustment)
+        3. Campaign State must be 'enabled' (EXCEPT for Bidding Adjustment)
+        4. Ad Group State must be 'enabled' (EXCEPT for Bidding Adjustment)
 
         Args:
             df: Raw Bulk DataFrame
@@ -75,7 +75,7 @@ class BulkCleaner:
                 f"DEBUG BulkCleaner: Bidding Adjustment rows AFTER Entity filter: {bidding_adj_after_entity}"
             )
 
-        # Filter 2: State = enabled
+        # Filter 2: State = enabled (EXCEPT for Bidding Adjustment)
         if "State" in cleaned_df.columns:
             before_count = len(cleaned_df)
 
@@ -87,7 +87,13 @@ class BulkCleaner:
                 for state, count in ba_states.items():
                     print(f"  {state}: {count}")
 
-            cleaned_df = cleaned_df[cleaned_df["State"] == self.ENABLED_STATE]
+            # IMPORTANT: Apply State filter ONLY to non-Bidding Adjustment rows
+            # Bidding Adjustment rows ALWAYS pass through regardless of State value
+            state_filter = (cleaned_df["State"] == self.ENABLED_STATE) | (
+                cleaned_df["Entity"] == "Bidding Adjustment"
+            )
+            cleaned_df = cleaned_df[state_filter]
+
             removed = before_count - len(cleaned_df)
             if removed > 0:
                 self.removed_reasons["state_not_enabled"] = removed
@@ -101,7 +107,7 @@ class BulkCleaner:
                 f"DEBUG BulkCleaner: Bidding Adjustment rows AFTER State filter: {bidding_adj_after_state}"
             )
 
-        # Filter 3: Campaign State = enabled
+        # Filter 3: Campaign State = enabled (EXCEPT for Bidding Adjustment)
         campaign_state_col = "Campaign State (Informational only)"
         if campaign_state_col in cleaned_df.columns:
             before_count = len(cleaned_df)
@@ -116,9 +122,13 @@ class BulkCleaner:
                 for state, count in ba_campaign_states.items():
                     print(f"  {state}: {count}")
 
-            cleaned_df = cleaned_df[
-                cleaned_df[campaign_state_col] == self.ENABLED_STATE
-            ]
+            # IMPORTANT: Apply Campaign State filter ONLY to non-Bidding Adjustment rows
+            # Bidding Adjustment rows ALWAYS pass through regardless of Campaign State
+            campaign_filter = (cleaned_df[campaign_state_col] == self.ENABLED_STATE) | (
+                cleaned_df["Entity"] == "Bidding Adjustment"
+            )
+            cleaned_df = cleaned_df[campaign_filter]
+
             removed = before_count - len(cleaned_df)
             if removed > 0:
                 self.removed_reasons["campaign_not_enabled"] = removed
@@ -132,7 +142,7 @@ class BulkCleaner:
                 f"DEBUG BulkCleaner: Bidding Adjustment rows AFTER Campaign State filter: {bidding_adj_after_campaign}"
             )
 
-        # Filter 4: Ad Group State = enabled
+        # Filter 4: Ad Group State = enabled (EXCEPT for Bidding Adjustment)
         ad_group_state_col = "Ad Group State (Informational only)"
         if ad_group_state_col in cleaned_df.columns:
             before_count = len(cleaned_df)
@@ -147,9 +157,13 @@ class BulkCleaner:
                 for state, count in ba_adgroup_states.items():
                     print(f"  {state}: {count}")
 
-            cleaned_df = cleaned_df[
-                cleaned_df[ad_group_state_col] == self.ENABLED_STATE
-            ]
+            # IMPORTANT: Apply Ad Group State filter ONLY to non-Bidding Adjustment rows
+            # Bidding Adjustment rows ALWAYS pass through regardless of Ad Group State
+            ad_group_filter = (cleaned_df[ad_group_state_col] == self.ENABLED_STATE) | (
+                cleaned_df["Entity"] == "Bidding Adjustment"
+            )
+            cleaned_df = cleaned_df[ad_group_filter]
+
             removed = before_count - len(cleaned_df)
             if removed > 0:
                 self.removed_reasons["ad_group_not_enabled"] = removed

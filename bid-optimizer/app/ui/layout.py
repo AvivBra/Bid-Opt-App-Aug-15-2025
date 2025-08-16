@@ -25,12 +25,15 @@ def apply_custom_css():
         background-color: #CC0000;
     }
     
-    /* כותרות סקציות */
+    /* כותרות סקציות - ממורכזות */
     .section-header {
         border-bottom: 2px solid #FF0000;
         padding-bottom: 10px;
         margin-bottom: 20px;
         color: #000000;
+        text-align: center;
+        font-size: 24px;
+        font-weight: bold;
     }
     
     /* מרווחים בין סקציות */

@@ -37,7 +37,7 @@ def render_validation_panel():
     st.markdown(
         """
     <div class='section-container'>
-        <h2 class='section-header'>Validation Results</h2>
+        <h2 class='section-header'>Data Validation</h2>
     """,
         unsafe_allow_html=True,
     )
@@ -129,8 +129,18 @@ def perform_real_validation():
                 "errors", ["Unknown validation error"]
             )
 
-        # Store warnings
-        st.session_state.validation_warnings = result.get("warnings", [])
+        # Store warnings but filter out the unwanted ones
+        warnings = result.get("warnings", [])
+        filtered_warnings = []
+        for warning in warnings:
+            # Skip warnings about Entity and State filtering
+            if "Entity not Keyword/Product Targeting/Bidding Adjustment" in warning:
+                continue
+            if "State not enabled" in warning:
+                continue
+            filtered_warnings.append(warning)
+        
+        st.session_state.validation_warnings = filtered_warnings
 
     except Exception as e:
         st.session_state.validation_state = "error"
@@ -148,7 +158,7 @@ def render_valid_state():
         "All portfolios in Bulk file have Base Bid values in Template",
     )
 
-    # Show warnings if any
+    # Show warnings if any (filtered)
     warnings = st.session_state.get("validation_warnings", [])
     if warnings:
         for warning in warnings[:3]:  # Show first 3 warnings

@@ -4,7 +4,7 @@ import streamlit as st
 def render_optimization_checklist():
     """Render optimization checklist"""
 
-    # List of optimizations
+    # List of optimizations (defined locally to avoid import issues)
     optimizations = [
         "Zero Sales",
         "Portfolio Bid Optimization",
@@ -45,6 +45,9 @@ def render_optimization_checklist():
 
     # Update selections in session state
     st.session_state.selected_optimizations = selected
+
+    # Add spacing before the info/warning messages
+    st.markdown("<br>", unsafe_allow_html=True)
 
     # Warning if no optimization selected
     if not selected:

@@ -3,10 +3,15 @@ maxUploadSize = 40
 enableCORS = false
 
 [theme]
-primaryColor = "#FF0000"
-backgroundColor = "#FFFFFF"
-textColor = "#000000"
-font = "sans serif"
+# צבע ראשי סגול/ויולט - נשאר קבוע בשני המצבים
+primaryColor = "#9B6BFF"
+
+# לא מגדירים צבעי רקע - נשלוט עליהם מהקוד
+# backgroundColor = 
+# secondaryBackgroundColor = 
+# textColor = 
+
+font = "Inter"
 
 [client]
 layout = "centered"

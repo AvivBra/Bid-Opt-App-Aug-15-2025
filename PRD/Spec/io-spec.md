@@ -96,21 +96,23 @@ Supplements-EU   | 2.10     | 8.50
 #### שלב 1: סינון והפרדה
 מהלשונית "Sponsored Products Campaigns":
 - משאירים רק שורות עם Entity = "Keyword" או "Product Targeting" או "Product Ad" או "Bidding Adjustment"
+
 - מפרידים ל-3 לשוניות:
+  1. **Targets**: Keyword + Product Targeting
+  2. **Product Ads**: Product Ad בלבד
+  3. **Bidding Adjustments**: Bidding Adjustment בלבד
   1. לשונית ראשית: Keyword + Product Targeting
   2. לשונית Product Ad: Product Ad בלבד
   3. לשונית Bidding Adjustment: Bidding Adjustment בלבד
 
 #### שלב 2: ניקוי נוסף
-רק בלשוניות הראשית ו-Product Ad (לא ב-Bidding Adjustment):
-- מוחקים שורות שאינן enabled בכל 3 העמודות:
+רק בלשוניות Targets ו-Product Ads (לא ב-Bidding Adjustments):- מוחקים שורות שאינן enabled בכל 3 העמודות:
   - State = "enabled"
   - Campaign State (Informational only) = "enabled"
   - Ad Group State (Informational only) = "enabled"
 
 #### לשוניות נוספות
-- לשונית "Portfolios" (אם קיימת) - נשמרת כמו שהיא
-
+- לשונית **Portfolios** (אם קיימת) - נשמרת כמו שהיא
 
 ## 3. Working File - פלט
 

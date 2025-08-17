@@ -114,28 +114,28 @@ def validate_bulk_structure(df):
         filtered = bulk_df[entity_filter]
         
         # שלב 2: הפרדה ללשוניות
-        main_df = filtered[filtered['Entity'].isin(['Keyword', 'Product Targeting'])]
-        product_ad_df = filtered[filtered['Entity'] == 'Product Ad']
-        bidding_adj_df = filtered[filtered['Entity'] == 'Bidding Adjustment']
+        targets_df = filtered[filtered['Entity'].isin(['Keyword', 'Product Targeting'])]
+        product_ads_df = filtered[filtered['Entity'] == 'Product Ad']
+        bidding_adjustments_df = filtered[filtered['Entity'] == 'Bidding Adjustment']
         
-        # שלב 3: ניקוי נוסף - רק ללשונית הראשית ו-Product Ad
-        # (Bidding Adjustment לא עובר ניקוי נוסף)
+        # שלב 3: ניקוי נוסף - רק ללשוניות Targets ו-Product Ads
+        # (Bidding Adjustments לא עובר ניקוי נוסף)
         state_filter = (
-            (main_df['State'] == 'enabled') &
-            (main_df['Campaign State (Informational only)'] == 'enabled') &
-            (main_df['Ad Group State (Informational only)'] == 'enabled')
+            (targets_df['State'] == 'enabled') &
+            (targets_df['Campaign State (Informational only)'] == 'enabled') &
+            (targets_df['Ad Group State (Informational only)'] == 'enabled')
         )
-        main_df_cleaned = main_df[state_filter]
+        targets_df_cleaned = targets_df[state_filter]
         
-        product_ad_filter = (
-            (product_ad_df['State'] == 'enabled') &
-            (product_ad_df['Campaign State (Informational only)'] == 'enabled') &
-            (product_ad_df['Ad Group State (Informational only)'] == 'enabled')
+        product_ads_filter = (
+            (product_ads_df['State'] == 'enabled') &
+            (product_ads_df['Campaign State (Informational only)'] == 'enabled') &
+            (product_ads_df['Ad Group State (Informational only)'] == 'enabled')
         )
-        product_ad_df_cleaned = product_ad_df[product_ad_filter]
+        product_ads_df_cleaned = product_ads_df[product_ads_filter]
         
-        # שלב 4: חילוץ פורטפוליוז מהלשונית הראשית בלבד
-        bulk_portfolios = main_df_cleaned['Portfolio Name (Informational only)'].unique()
+        # שלב 4: חילוץ פורטפוליוז מלשונית Targets בלבד
+        bulk_portfolios = targets_df_cleaned['Portfolio Name (Informational only)'].unique()
         
         # שלב 5: חילוץ פורטפוליוז מ-Template (ללא Ignore)
         template_portfolios = template_df[
@@ -146,11 +146,11 @@ def validate_bulk_structure(df):
         missing = set(bulk_portfolios) - set(template_portfolios)
         
         return {
-            'main': main_df_cleaned,
-            'product_ad': product_ad_df_cleaned,
-            'bidding_adjustment': bidding_adj_df,  # לא עבר ניקוי נוסף
+            'targets': targets_df_cleaned,
+            'product_ads': product_ads_df_cleaned,
+            'bidding_adjustments': bidding_adjustments_df,  # לא עבר ניקוי נוסף
             'missing_portfolios': missing
-        }   
+        }
 
 
 ### תוצאות השוואה

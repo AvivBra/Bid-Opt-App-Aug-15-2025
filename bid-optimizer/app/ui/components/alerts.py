@@ -3,16 +3,47 @@
 import streamlit as st
 
 
+def get_theme_colors():
+    """Get colors based on current theme"""
+    is_dark = st.session_state.get("dark_mode", True)
+
+    if is_dark:
+        return {
+            "bg": "#1A1D23",
+            "border": "#2E3138",
+            "text": "#FAFAFA",
+            "success": "#00D26A",
+            "error": "#FF6B6B",
+            "info": "#6BB6FF",
+            "warning": "#FFD68A",
+            "pink": "#FFB4D0",
+            "pink_border": "#FF4B9B",
+        }
+    else:
+        return {
+            "bg": "#F8F9FA",
+            "border": "#DEE2E6",
+            "text": "#212529",
+            "success": "#28A745",
+            "error": "#DC3545",
+            "info": "#007BFF",
+            "warning": "#FFC107",
+            "pink": "#E91E63",
+            "pink_border": "#C2185B",
+        }
+
+
 def render_success_alert(title: str, message: str = ""):
     """Render a success alert with green checkmark"""
+    colors = get_theme_colors()
 
     alert_html = f"""
-    <div style='background-color: #d4edda; border: 1px solid #c3e6cb; 
+    <div style='background-color: {colors["bg"]}; border: 1px solid {colors["border"]}; 
                 border-radius: 4px; padding: 12px; margin-bottom: 16px;'>
-        <div style='color: #155724; font-weight: bold;'>
+        <div style='color: {colors["success"]}; font-weight: bold;'>
             ✓ {title}
         </div>
-        {f'<div style="color: #155724; margin-top: 4px;">{message}</div>' if message else ""}
+        {f'<div style="color: {colors["text"]}; margin-top: 4px;">{message}</div>' if message else ""}
     </div>
     """
     st.markdown(alert_html, unsafe_allow_html=True)
@@ -20,14 +51,15 @@ def render_success_alert(title: str, message: str = ""):
 
 def render_error_alert(title: str, message: str = ""):
     """Render an error alert with red X"""
+    colors = get_theme_colors()
 
     alert_html = f"""
-    <div style='background-color: #f8d7da; border: 1px solid #f5c6cb;
+    <div style='background-color: {colors["bg"]}; border: 1px solid {colors["border"]};
                 border-radius: 4px; padding: 12px; margin-bottom: 16px;'>
-        <div style='color: #721c24; font-weight: bold;'>
+        <div style='color: {colors["error"]}; font-weight: bold;'>
             ❌ {title}
         </div>
-        {f'<div style="color: #721c24; margin-top: 4px;">{message}</div>' if message else ""}
+        {f'<div style="color: {colors["text"]}; margin-top: 4px;">{message}</div>' if message else ""}
     </div>
     """
     st.markdown(alert_html, unsafe_allow_html=True)
@@ -35,14 +67,15 @@ def render_error_alert(title: str, message: str = ""):
 
 def render_info_alert(title: str, message: str = ""):
     """Render an info alert with blue icon"""
+    colors = get_theme_colors()
 
     alert_html = f"""
-    <div style='background-color: #d1ecf1; border: 1px solid #bee5eb;
+    <div style='background-color: {colors["bg"]}; border: 1px solid {colors["border"]};
                 border-radius: 4px; padding: 12px; margin-bottom: 16px;'>
-        <div style='color: #0c5460; font-weight: bold;'>
+        <div style='color: {colors["info"]}; font-weight: bold;'>
             ℹ️ {title}
         </div>
-        {f'<div style="color: #0c5460; margin-top: 4px;">{message}</div>' if message else ""}
+        {f'<div style="color: {colors["text"]}; margin-top: 4px;">{message}</div>' if message else ""}
     </div>
     """
     st.markdown(alert_html, unsafe_allow_html=True)
@@ -50,14 +83,15 @@ def render_info_alert(title: str, message: str = ""):
 
 def render_warning_alert(title: str, message: str = ""):
     """Render a warning alert with orange triangle"""
+    colors = get_theme_colors()
 
     alert_html = f"""
-    <div style='background-color: #fff3cd; border: 1px solid #ffeaa7;
+    <div style='background-color: {colors["bg"]}; border: 1px solid {colors["border"]};
                 border-radius: 4px; padding: 12px; margin-bottom: 16px;'>
-        <div style='color: #856404; font-weight: bold;'>
+        <div style='color: {colors["warning"]}; font-weight: bold;'>
             ⚠️ {title}
         </div>
-        {f'<div style="color: #856404; margin-top: 4px;">{message}</div>' if message else ""}
+        {f'<div style="color: {colors["text"]}; margin-top: 4px;">{message}</div>' if message else ""}
     </div>
     """
     st.markdown(alert_html, unsafe_allow_html=True)
@@ -65,14 +99,15 @@ def render_warning_alert(title: str, message: str = ""):
 
 def render_pink_notice(title: str, message: str = ""):
     """Render a pink notice box for calculation errors"""
+    colors = get_theme_colors()
 
     alert_html = f"""
-    <div style='background-color: #FFE4E1; border: 1px solid #FFB6C1;
+    <div style='background-color: {colors["bg"]}; border: 2px solid {colors["pink_border"]};
                 border-radius: 4px; padding: 16px; margin: 20px 0;'>
-        <div style='color: #8B0000; font-weight: bold; font-size: 14px;'>
+        <div style='color: {colors["pink"]}; font-weight: bold; font-size: 14px;'>
             Please note: {title}
         </div>
-        {f'<div style="color: #8B0000; margin-top: 8px;">{message}</div>' if message else ""}
+        {f'<div style="color: {colors["pink"]}; margin-top: 8px;">{message}</div>' if message else ""}
     </div>
     """
     st.markdown(alert_html, unsafe_allow_html=True)
@@ -80,16 +115,18 @@ def render_pink_notice(title: str, message: str = ""):
 
 def render_processing_spinner(message: str = "Processing..."):
     """Render a processing spinner with message"""
+    colors = get_theme_colors()
+    violet = "#9B6BFF"  # ויולט קבוע
 
     spinner_html = f"""
     <div style='text-align: center; padding: 20px;'>
-        <div style='color: #666666; margin-bottom: 10px;'>{message}</div>
+        <div style='color: {colors["text"]}; margin-bottom: 10px;'>{message}</div>
         <div class='spinner'></div>
     </div>
     <style>
     .spinner {{
-        border: 4px solid #f3f3f3;
-        border-top: 4px solid #FF0000;
+        border: 4px solid {colors["border"]};
+        border-top: 4px solid {violet};
         border-radius: 50%;
         width: 40px;
         height: 40px;

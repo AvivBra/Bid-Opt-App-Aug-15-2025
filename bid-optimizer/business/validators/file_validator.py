@@ -1,6 +1,6 @@
 """
-File Validator
-Validates Template and Bulk file structure and data
+bid-optimizer/business/validators/file_validator.py
+File Validator - Validates Template and Bulk file structure and data
 """
 
 import pandas as pd
@@ -73,48 +73,59 @@ class FileValidator:
             else:
                 # Convert to string and check if it's "ignore" (case-insensitive)
                 base_bid_str = str(base_bid).strip().lower()
+
                 if base_bid_str != "ignore":
+                    # Try to convert to float
                     try:
                         bid_value = float(base_bid)
                         if bid_value < 0 or bid_value > self.MAX_BID:
                             self.errors.append(
-                                f"Base Bid must be between 0 and {self.MAX_BID} in row {row_num}"
+                                f"Base Bid must be between 0.00 and {self.MAX_BID} in row {row_num}"
                             )
                     except (ValueError, TypeError):
                         self.errors.append(
                             f"Invalid Base Bid value in row {row_num} - must be number or 'Ignore'"
                         )
 
-            # Check Target CPA (optional)
+            # Check Target CPA (optional, can be empty)
             target_cpa = row["Target CPA"]
-            if pd.notna(target_cpa) and target_cpa != "":
+            if not pd.isna(target_cpa) and target_cpa != "":
                 try:
                     cpa_value = float(target_cpa)
                     if cpa_value < 0:
-                        self.warnings.append(
-                            f"Target CPA should be positive in row {row_num}"
+                        self.errors.append(
+                            f"Target CPA cannot be negative in row {row_num}"
                         )
                 except (ValueError, TypeError):
-                    self.warnings.append(f"Invalid Target CPA value in row {row_num}")
+                    self.errors.append(
+                        f"Invalid Target CPA value in row {row_num} - must be a number"
+                    )
 
         # Check for duplicate portfolio names
-        portfolio_names = df["Portfolio Name"].dropna()
+        portfolio_names = df["Portfolio Name"].dropna().astype(str).str.strip()
         duplicates = portfolio_names[portfolio_names.duplicated()].unique()
         if len(duplicates) > 0:
-            self.errors.append(f"Duplicate portfolio names: {', '.join(duplicates)}")
+            for dup in duplicates:
+                self.errors.append(f"Duplicate portfolio name: {dup}")
 
-        # Check if all portfolios are ignored (now case-insensitive)
-        non_ignored = df[df["Base Bid"].astype(str).str.strip().str.lower() != "ignore"]
-        if len(non_ignored) == 0:
+        # Check if all portfolios are ignored
+        non_ignored_count = 0
+        for _, row in df.iterrows():
+            base_bid = row["Base Bid"]
+            if not pd.isna(base_bid):
+                base_bid_str = str(base_bid).strip().lower()
+                if base_bid_str != "ignore":
+                    non_ignored_count += 1
+
+        if non_ignored_count == 0:
             self.errors.append("All portfolios marked as 'Ignore' - cannot proceed")
 
-        # Check for special characters (warning only)
-        for name in portfolio_names:
-            if any(char in str(name) for char in ["#", "@", "&", "%"]):
-                self.warnings.append(
-                    f"Portfolio name contains special characters: {name}"
-                )
-                break
+        # Add warnings for ignored portfolios
+        ignored_count = len(df) - non_ignored_count
+        if ignored_count > 0:
+            self.warnings.append(
+                f"{ignored_count} portfolio(s) marked as 'Ignore' will be skipped"
+            )
 
         return self._create_result(len(self.errors) == 0)
 
@@ -131,16 +142,18 @@ class FileValidator:
         self.errors = []
         self.warnings = []
 
+        # Check if DataFrame is empty
+        if df is None or len(df) == 0:
+            self.errors.append("Bulk file is empty - no data found")
+            return self._create_result(False)
+
         # Check column count
         if len(df.columns) != self.BULK_COLUMNS_COUNT:
             self.errors.append(
-                f"Bulk file must have exactly {self.BULK_COLUMNS_COUNT} columns, found {len(df.columns)}"
+                f"Bulk file must have exactly {self.BULK_COLUMNS_COUNT} columns "
+                f"(found {len(df.columns)})"
             )
-            return self._create_result(False)
-
-        # Check if empty
-        if len(df) == 0:
-            self.errors.append("Bulk file has no data rows")
+            # Don't continue validation if column count is wrong
             return self._create_result(False)
 
         # Check row count
@@ -150,69 +163,74 @@ class FileValidator:
             )
             return self._create_result(False)
 
-        # Check for required columns (by position)
-        required_column_checks = {
-            1: "Entity",  # Column B
-            2: "Operation",  # Column C
-            13: "Portfolio Name (Informational only)",  # Column N
-            17: "State",  # Column R
-            18: "Campaign State (Informational only)",  # Column S
-            19: "Ad Group State (Informational only)",  # Column T
-            27: "Bid",  # Column AB
-            41: "Sales",  # Column AP
-            37: "Impressions",  # Column AL
-        }
+        # Check for required columns (Entity is critical)
+        if "Entity" not in df.columns:
+            self.errors.append("Missing required 'Entity' column")
 
-        for col_idx, expected_name in required_column_checks.items():
-            actual_name = df.columns[col_idx]
-            if expected_name not in actual_name:
-                self.warnings.append(
-                    f"Column {col_idx + 1} should be '{expected_name}', found '{actual_name}'"
-                )
+        # Check for Portfolio Name column
+        portfolio_column = "Portfolio Name (Informational only)"
+        if portfolio_column not in df.columns:
+            self.errors.append(f"Missing required '{portfolio_column}' column")
 
-        # Check for data issues
-        if "Entity" in df.columns:
-            entity_values = df["Entity"].value_counts()
-            valid_entities = ["Keyword", "Product Targeting", "Bidding Adjustment"]
-            valid_count = sum(entity_values.get(e, 0) for e in valid_entities)
+        # Check for State columns
+        state_columns = [
+            "State",
+            "Campaign State (Informational only)",
+            "Ad Group State (Informational only)",
+        ]
+        for col in state_columns:
+            if col not in df.columns:
+                self.errors.append(f"Missing required '{col}' column")
 
-            if valid_count == 0:
-                self.warnings.append(
-                    "No rows with Entity = 'Keyword' or 'Product Targeting' or 'Bidding Adjustment' found"
-                )
-            else:
-                other_count = len(df) - valid_count
-                if other_count > 0:
-                    self.warnings.append(
-                        f"{other_count} rows will be filtered out (Entity not Keyword/Product Targeting/Bidding Adjustment)"
-                    )
-
-        if "State" in df.columns:
-            enabled_count = (df["State"] == "enabled").sum()
-            if enabled_count == 0:
-                self.warnings.append("No rows with State = 'enabled' found")
-            else:
-                disabled_count = len(df) - enabled_count
-                if disabled_count > 0:
-                    self.warnings.append(
-                        f"{disabled_count} rows will be filtered out (State not enabled)"
-                    )
-
-        # Check Bid values
-        if "Bid" in df.columns:
-            bid_values = pd.to_numeric(df["Bid"], errors="coerce")
-            high_bids = (bid_values > 1.25).sum()
-            low_bids = (bid_values < 0.02).sum()
-
-            if high_bids > 0:
-                self.warnings.append(f"{high_bids} rows have Bid values above $1.25")
-            if low_bids > 0:
-                self.warnings.append(f"{low_bids} rows have Bid values below $0.02")
+        # Add warnings for large files
+        if len(df) > 100000:
+            self.warnings.append(
+                f"Large file detected ({len(df):,} rows) - processing may take longer"
+            )
 
         return self._create_result(len(self.errors) == 0)
 
+    def validate_file_size(self, file_size_bytes: int) -> Dict[str, Any]:
+        """
+        Validate file size before reading
+
+        Args:
+            file_size_bytes: File size in bytes
+
+        Returns:
+            Validation result
+        """
+        self.errors = []
+        self.warnings = []
+
+        max_bytes = self.MAX_FILE_SIZE_MB * 1024 * 1024
+
+        if file_size_bytes > max_bytes:
+            self.errors.append(
+                f"File exceeds {self.MAX_FILE_SIZE_MB}MB limit "
+                f"(size: {file_size_bytes / 1024 / 1024:.1f}MB)"
+            )
+            return self._create_result(False)
+
+        # Warning for large files
+        if file_size_bytes > 10 * 1024 * 1024:  # 10MB
+            self.warnings.append(
+                f"Large file detected ({file_size_bytes / 1024 / 1024:.1f}MB) - "
+                "processing may take longer"
+            )
+
+        return self._create_result(True)
+
     def _create_result(self, is_valid: bool) -> Dict[str, Any]:
-        """Create validation result dictionary"""
+        """
+        Create validation result dictionary
+
+        Args:
+            is_valid: Whether validation passed
+
+        Returns:
+            Result dictionary
+        """
         return {
             "is_valid": is_valid,
             "errors": self.errors.copy(),
@@ -220,8 +238,3 @@ class FileValidator:
             "error_count": len(self.errors),
             "warning_count": len(self.warnings),
         }
-
-    def validate_file_size(self, file_size_bytes: int) -> bool:
-        """Check if file size is within limits"""
-        max_bytes = self.MAX_FILE_SIZE_MB * 1024 * 1024
-        return file_size_bytes <= max_bytes

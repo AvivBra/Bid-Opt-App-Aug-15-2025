@@ -16,21 +16,21 @@ def render_portfolio_list(portfolios: List[str], list_type: str = "Missing"):
     if not portfolios:
         return
 
-    # Set color based on list type
+    # Set color based on list type - brighter for dark mode
     color_map = {
-        "Missing": "#721c24",  # Red
-        "Ignored": "#0c5460",  # Blue
-        "Excess": "#856404",  # Yellow/Orange
-        "Valid": "#155724",  # Green
+        "Missing": "#FF6B6B",  # Bright Red
+        "Ignored": "#6BB6FF",  # Bright Blue
+        "Excess": "#FFD68A",  # Bright Yellow/Orange
+        "Valid": "#00D26A",  # Bright Green
     }
 
-    color = color_map.get(list_type, "#333333")
+    color = color_map.get(list_type, "#FAFAFA")
 
     # Create portfolio list HTML
     portfolio_items = "".join([f"<li>{portfolio}</li>" for portfolio in portfolios])
 
     list_html = f"""
-    <div style='background-color: #f8f9fa; border-left: 4px solid {color};
+    <div style='background-color: #262730; border-left: 4px solid {color};
                 padding: 10px 15px; margin: 10px 0; border-radius: 4px;'>
         <ul style='margin: 0; padding-left: 20px; color: {color};'>
             {portfolio_items}
@@ -60,30 +60,30 @@ def render_portfolio_summary(
     ignored_pct = (ignored / total * 100) if total > 0 else 0
 
     summary_html = f"""
-    <div style='background-color: #f8f9fa; padding: 15px; border-radius: 8px; margin: 15px 0;'>
-        <h4 style='margin-top: 0; color: #333;'>Portfolio Summary</h4>
+    <div style='background-color: #262730; padding: 15px; border-radius: 8px; margin: 15px 0; border: 1px solid #333333;'>
+        <h4 style='margin-top: 0; color: #FAFAFA;'>Portfolio Summary</h4>
         <div style='display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;'>
             <div>
-                <span style='color: #666;'>Total Portfolios:</span>
-                <strong style='color: #333; margin-left: 5px;'>{total}</strong>
+                <span style='color: #B0B0B0;'>Total Portfolios:</span>
+                <strong style='color: #FAFAFA; margin-left: 5px;'>{total}</strong>
             </div>
             <div>
-                <span style='color: #155724;'>Valid:</span>
-                <strong style='color: #155724; margin-left: 5px;'>{valid} ({
+                <span style='color: #00D26A;'>Valid:</span>
+                <strong style='color: #00D26A; margin-left: 5px;'>{valid} ({
         valid_pct:.1f}%)</strong>
             </div>
             {
         f'''<div>
-                <span style='color: #721c24;'>Missing:</span>
-                <strong style='color: #721c24; margin-left: 5px;'>{missing} ({missing_pct:.1f}%)</strong>
+                <span style='color: #FF6B6B;'>Missing:</span>
+                <strong style='color: #FF6B6B; margin-left: 5px;'>{missing} ({missing_pct:.1f}%)</strong>
             </div>'''
         if missing > 0
         else ""
     }
             {
         f'''<div>
-                <span style='color: #0c5460;'>Ignored:</span>
-                <strong style='color: #0c5460; margin-left: 5px;'>{ignored} ({ignored_pct:.1f}%)</strong>
+                <span style='color: #6BB6FF;'>Ignored:</span>
+                <strong style='color: #6BB6FF; margin-left: 5px;'>{ignored} ({ignored_pct:.1f}%)</strong>
             </div>'''
         if ignored > 0
         else ""
@@ -110,10 +110,10 @@ def render_portfolio_table(portfolios_data: dict):
     table_html = """
     <table style='width: 100%; border-collapse: collapse; margin: 15px 0;'>
         <thead>
-            <tr style='background-color: #f8f9fa; border-bottom: 2px solid #dee2e6;'>
-                <th style='padding: 10px; text-align: left;'>Portfolio Name</th>
-                <th style='padding: 10px; text-align: left;'>Status</th>
-                <th style='padding: 10px; text-align: left;'>Base Bid</th>
+            <tr style='background-color: #262730; border-bottom: 2px solid #333333;'>
+                <th style='padding: 10px; text-align: left; color: #FAFAFA;'>Portfolio Name</th>
+                <th style='padding: 10px; text-align: left; color: #FAFAFA;'>Status</th>
+                <th style='padding: 10px; text-align: left; color: #FAFAFA;'>Base Bid</th>
             </tr>
         </thead>
         <tbody>
@@ -124,21 +124,21 @@ def render_portfolio_table(portfolios_data: dict):
         status = data.get("status", "Unknown")
         base_bid = data.get("base_bid", "-")
 
-        # Set color based on status
+        # Set color based on status - brighter for dark mode
         status_color = {
-            "Valid": "#28a745",
-            "Missing": "#dc3545",
-            "Ignored": "#17a2b8",
-            "Invalid": "#ffc107",
-        }.get(status, "#6c757d")
+            "Valid": "#00D26A",
+            "Missing": "#FF6B6B",
+            "Ignored": "#6BB6FF",
+            "Invalid": "#FFD68A",
+        }.get(status, "#B0B0B0")
 
         table_html += f"""
-        <tr style='border-bottom: 1px solid #dee2e6;'>
-            <td style='padding: 8px;'>{portfolio}</td>
+        <tr style='border-bottom: 1px solid #333333;'>
+            <td style='padding: 8px; color: #FAFAFA;'>{portfolio}</td>
             <td style='padding: 8px;'>
                 <span style='color: {status_color}; font-weight: bold;'>{status}</span>
             </td>
-            <td style='padding: 8px;'>{base_bid}</td>
+            <td style='padding: 8px; color: #FAFAFA;'>{base_bid}</td>
         </tr>
         """
 
@@ -173,8 +173,8 @@ def render_portfolio_pills(portfolios: List[str], max_display: int = 5):
     # Add portfolio pills
     for portfolio in display_portfolios:
         pills_html += f"""
-        <span style='background-color: #e9ecef; color: #495057; 
-                     padding: 4px 12px; border-radius: 12px; font-size: 14px;'>
+        <span style='background-color: #333333; color: #FAFAFA; 
+                     padding: 4px 12px; border-radius: 12px; font-size: 14px; border: 1px solid #444444;'>
             {portfolio}
         </span>
         """
@@ -182,7 +182,7 @@ def render_portfolio_pills(portfolios: List[str], max_display: int = 5):
     # Add "+X more" if needed
     if remaining > 0:
         pills_html += f"""
-        <span style='background-color: #FF0000; color: white; 
+        <span style='background-color: #FF4B4B; color: white; 
                      padding: 4px 12px; border-radius: 12px; font-size: 14px;'>
             +{remaining} more
         </span>

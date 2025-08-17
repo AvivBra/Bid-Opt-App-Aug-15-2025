@@ -13,7 +13,7 @@ def render_progress_bar(progress: float = 0.0, text: str = "Processing..."):
     """
     progress_bar = st.progress(progress)
     st.markdown(
-        f"<p style='text-align: center; color: #666;'>{text}</p>",
+        f"<p style='text-align: center; color: #FAFAFA;'>{text}</p>",
         unsafe_allow_html=True,
     )
     return progress_bar
@@ -44,12 +44,12 @@ def animate_progress(duration: float = 3.0, steps: list = None):
             st.progress(progress)
             if progress < 1.0:
                 st.markdown(
-                    f"<p style='text-align: center; color: #666;'>{text} ({int(progress * 100)}%)</p>",
+                    f"<p style='text-align: center; color: #FAFAFA;'>{text} ({int(progress * 100)}%)</p>",
                     unsafe_allow_html=True,
                 )
             else:
                 st.markdown(
-                    f"<p style='text-align: center; color: #28a745; font-weight: bold;'>{text}</p>",
+                    f"<p style='text-align: center; color: #00D26A; font-weight: bold;'>{text}</p>",
                     unsafe_allow_html=True,
                 )
         time.sleep(duration / len(steps))
@@ -69,11 +69,11 @@ def render_processing_status(status: str, progress_value: float = None):
         st.progress(progress_value)
         percentage = int(progress_value * 100)
         st.markdown(
-            f"<p style='text-align: center; color: #666;'>{status} ({percentage}%)</p>",
+            f"<p style='text-align: center; color: #FAFAFA;'>{status} ({percentage}%)</p>",
             unsafe_allow_html=True,
         )
     else:
         st.markdown(
-            f"<p style='text-align: center; color: #666;'>{status}</p>",
+            f"<p style='text-align: center; color: #FAFAFA;'>{status}</p>",
             unsafe_allow_html=True,
         )

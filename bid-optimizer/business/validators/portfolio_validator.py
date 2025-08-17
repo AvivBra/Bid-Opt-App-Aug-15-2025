@@ -1,6 +1,6 @@
 """
-Portfolio Validator
-Validates portfolio matching between Template and Bulk files
+bid-optimizer/business/validators/portfolio_validator.py
+Portfolio Validator - Validates portfolio matching between Template and Bulk files
 """
 
 import pandas as pd
@@ -36,11 +36,11 @@ class PortfolioValidator:
         self, template_df: pd.DataFrame, cleaned_bulk_df: pd.DataFrame
     ) -> Dict[str, Any]:
         """
-        Validate that all portfolios in cleaned Bulk exist in Template
+        Validate that all portfolios in cleaned Bulk (Targets only) exist in Template
 
         Args:
             template_df: Template DataFrame with portfolio definitions
-            cleaned_bulk_df: Cleaned Bulk DataFrame (after filtering)
+            cleaned_bulk_df: Cleaned Bulk DataFrame (Targets only after filtering)
 
         Returns:
             Validation result with missing/excess/ignored portfolios
@@ -58,9 +58,7 @@ class PortfolioValidator:
 
         for _, row in template_df.iterrows():
             portfolio_name = str(row["Portfolio Name"]).strip()
-            base_bid = (
-                str(row["Base Bid"]).strip().lower()
-            )  # Convert to lowercase for comparison
+            base_bid = str(row["Base Bid"]).strip().lower()
 
             template_all.add(portfolio_name)
 
@@ -69,7 +67,7 @@ class PortfolioValidator:
             else:
                 template_portfolios.add(portfolio_name)
 
-        # Get unique portfolios from cleaned Bulk
+        # Get unique portfolios from cleaned Bulk (Targets only)
         bulk_portfolios = set()
 
         portfolio_column = "Portfolio Name (Informational only)"
@@ -168,7 +166,7 @@ class PortfolioValidator:
 
         Args:
             template_df: Template DataFrame
-            cleaned_bulk_df: Cleaned Bulk DataFrame
+            cleaned_bulk_df: Cleaned Bulk DataFrame (Targets only)
 
         Returns:
             Summary statistics dictionary
@@ -177,8 +175,17 @@ class PortfolioValidator:
 
         # Count portfolios
         template_count = len(template_df)
-        template_valid = len(template_df[template_df["Base Bid"] != "Ignore"])
-        template_ignored = len(template_df[template_df["Base Bid"] == "Ignore"])
+
+        # Count valid (non-ignored) portfolios
+        template_valid = 0
+        template_ignored = 0
+
+        for _, row in template_df.iterrows():
+            base_bid = str(row["Base Bid"]).strip().lower()
+            if base_bid == "ignore":
+                template_ignored += 1
+            else:
+                template_valid += 1
 
         bulk_unique = 0
         if portfolio_column in cleaned_bulk_df.columns:
@@ -218,9 +225,11 @@ class PortfolioValidator:
             Filtered DataFrame without ignored portfolio rows
         """
         # Get list of ignored portfolios
-        ignored = template_df[template_df["Base Bid"] == "Ignore"][
-            "Portfolio Name"
-        ].tolist()
+        ignored = []
+        for _, row in template_df.iterrows():
+            base_bid = str(row["Base Bid"]).strip().lower()
+            if base_bid == "ignore":
+                ignored.append(row["Portfolio Name"])
 
         if not ignored:
             return bulk_df

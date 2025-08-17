@@ -63,10 +63,9 @@ def render_validation_panel():
         render_ignored_state()
 
     elif validation_state == "error":
-        # Validation errors
+        # Validation error
         render_error_state()
 
-    # Close div
     st.markdown("</div>", unsafe_allow_html=True)
 
 
@@ -78,74 +77,60 @@ def perform_real_validation():
         template_file = st.session_state.get("template_file")
         bulk_file = st.session_state.get("bulk_file")
 
-        if not template_file or not bulk_file:
-            st.session_state.validation_state = "error"
-            st.session_state.validation_errors = ["Files not found in session"]
-            st.rerun()
-            return
+        print(f"DEBUG: Template file type: {type(template_file)}")
+        print(f"DEBUG: Bulk file type: {type(bulk_file)}")
 
-        # Reset file pointers
-        template_file.seek(0)
-        bulk_file.seek(0)
+        # Reset file positions if needed
+        if hasattr(template_file, "seek"):
+            template_file.seek(0)
+        if hasattr(bulk_file, "seek"):
+            bulk_file.seek(0)
 
         # Create orchestrator and validate
         orchestrator = Orchestrator()
         result = orchestrator.validate_files(template_file, bulk_file)
 
-        # Store full result for debugging
-        st.session_state.validation_result = result
+        print(f"DEBUG: Validation result: {result.get('is_valid')}")
+        print(f"DEBUG: Errors: {result.get('errors')}")
+        print(f"DEBUG: Missing portfolios: {result.get('missing_portfolios')}")
 
-        # Store DataFrames if available
-        if "template_df" in result:
-            st.session_state.template_df = result["template_df"]
-        if "bulk_df" in result:
-            st.session_state.bulk_df = result["bulk_df"]
-        if "cleaned_bulk_df" in result:
-            st.session_state.cleaned_bulk_df = result["cleaned_bulk_df"]
+        # Store the result in session state
+        st.session_state["validation_result"] = result
 
-        # Process validation result
-        if result["is_valid"]:
-            if result.get("ignored_portfolios"):
-                st.session_state.validation_state = "ignored"
-                st.session_state.ignored_portfolios = result["ignored_portfolios"]
-            else:
-                st.session_state.validation_state = "valid"
+        # Store separated dataframes and template for later processing
+        if result.get("separated_dataframes"):
+            st.session_state["separated_dataframes"] = result["separated_dataframes"]
+        if result.get("template_df") is not None:
+            st.session_state["template_df"] = result["template_df"]
 
-            # Store statistics
-            st.session_state.validation_stats = {
-                "total_portfolios": result["stats"].get("template_portfolios", 0),
-                "valid_rows": result["stats"].get("cleaned_rows", 0),
-                "filtered_rows": result["stats"].get("filtered_rows", 0),
-                "original_rows": result["stats"].get("original_rows", 0),
-            }
-
-        elif result.get("missing_portfolios"):
-            st.session_state.validation_state = "missing"
-            st.session_state.missing_portfolios = result["missing_portfolios"]
-
+        # Determine validation state
+        if not result["is_valid"]:
+            if result.get("errors"):
+                st.session_state["validation_state"] = "error"
+                st.session_state["validation_errors"] = result["errors"]
+            elif result.get("missing_portfolios"):
+                st.session_state["validation_state"] = "missing"
+                st.session_state["missing_portfolios"] = result["missing_portfolios"]
+        elif result.get("ignored_portfolios"):
+            st.session_state["validation_state"] = "ignored"
+            st.session_state["ignored_portfolios"] = result["ignored_portfolios"]
         else:
-            st.session_state.validation_state = "error"
-            st.session_state.validation_errors = result.get(
-                "errors", ["Unknown validation error"]
-            )
+            st.session_state["validation_state"] = "valid"
 
-        # Store warnings but filter out the unwanted ones
-        warnings = result.get("warnings", [])
-        filtered_warnings = []
-        for warning in warnings:
-            # Skip warnings about Entity and State filtering
-            if "Entity not Keyword/Product Targeting/Bidding Adjustment" in warning:
-                continue
-            if "State not enabled" in warning:
-                continue
-            filtered_warnings.append(warning)
-        
-        st.session_state.validation_warnings = filtered_warnings
+        # Store stats
+        if result.get("stats"):
+            st.session_state["validation_stats"] = result["stats"]
 
     except Exception as e:
-        st.session_state.validation_state = "error"
-        st.session_state.validation_errors = [f"Validation failed: {str(e)}"]
+        print(f"ERROR in validation: {e}")
+        import traceback
 
+        traceback.print_exc()
+
+        st.session_state["validation_state"] = "error"
+        st.session_state["validation_errors"] = [f"Validation failed: {str(e)}"]
+
+    # Force rerun to show the results
     st.rerun()
 
 
@@ -154,19 +139,19 @@ def render_valid_state():
 
     # Success message
     render_success_alert(
-        "All portfolios valid",
-        "All portfolios in Bulk file have Base Bid values in Template",
+        "All portfolios valid", "All portfolios in Bulk exist in Template"
     )
 
-    # Show warnings if any (filtered)
-    warnings = st.session_state.get("validation_warnings", [])
-    if warnings:
-        for warning in warnings[:3]:  # Show first 3 warnings
-            render_warning_alert("", warning)
-        if len(warnings) > 3:
-            with st.expander(f"View all {len(warnings)} warnings"):
-                for warning in warnings:
-                    st.write(f"⚠️ {warning}")
+    # Show stats if available
+    stats = st.session_state.get("validation_stats", {})
+    if stats:
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            st.metric("Template Rows", stats.get("template_rows", 0))
+        with col2:
+            st.metric("Targets Rows", stats.get("targets_rows", 0))
+        with col3:
+            st.metric("Total Bulk Rows", stats.get("bulk_rows", 0))
 
     # Process button
     col1, col2, col3 = st.columns([1, 2, 1])
@@ -176,44 +161,31 @@ def render_valid_state():
             key="process_files_btn",
             type="primary",
             use_container_width=True,
-            disabled=len(st.session_state.get("selected_optimizations", [])) == 0,
         ):
-            # IMPORTANT: Set state to processing to trigger output panel
+            # Move to processing state
             st.session_state.current_state = "processing"
             st.rerun()
 
-    # Show statistics if available
-    if st.session_state.get("validation_stats"):
-        stats = st.session_state.validation_stats
-        col1, col2, col3, col4 = st.columns(4)
-        with col1:
-            st.metric("Total Portfolios", stats.get("total_portfolios", 0))
-        with col2:
-            st.metric("Original Rows", f"{stats.get('original_rows', 0):,}")
-        with col3:
-            st.metric("After Cleaning", f"{stats.get('valid_rows', 0):,}")
-        with col4:
-            st.metric("Rows Filtered", f"{stats.get('filtered_rows', 0):,}")
-
 
 def render_missing_state():
-    """Render when portfolios are missing"""
+    """Render when missing portfolios are found"""
 
     missing_portfolios = st.session_state.get("missing_portfolios", [])
 
     # Error message
     render_error_alert(
         "Missing portfolios found - Processing Blocked",
-        f"The following portfolios are in Bulk but not in Template:",
+        f"The following {len(missing_portfolios)} portfolios are in Bulk but not in Template",
     )
 
-    # List of missing portfolios
+    # Show missing portfolios
     if missing_portfolios:
         render_portfolio_list(missing_portfolios, "Missing")
 
-    # Info about blocking
-    st.error(
-        "You cannot proceed to processing until all portfolios are included in the Template."
+    # Warning message
+    st.warning(
+        "You must add ALL these portfolios to your Template file to continue",
+        icon="⚠️",
     )
 
     # Upload new template button

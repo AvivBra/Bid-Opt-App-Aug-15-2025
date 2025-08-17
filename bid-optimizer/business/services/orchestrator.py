@@ -18,7 +18,7 @@ if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
 from business.validators import FileValidator, PortfolioValidator
-from business.processors import BulkCleaner
+from business.processors import BulkCleaner, FileGenerator
 from data.readers import ExcelReader, CSVReader
 
 
@@ -30,6 +30,7 @@ class Orchestrator:
         self.file_validator = FileValidator()
         self.portfolio_validator = PortfolioValidator()
         self.bulk_cleaner = BulkCleaner()
+        self.file_generator = FileGenerator()
         self.excel_reader = ExcelReader()
         self.csv_reader = CSVReader()
 
@@ -61,11 +62,6 @@ class Orchestrator:
         }
 
         try:
-            # DEBUG: Print initial info
-            print("DEBUG: Starting validation")
-            print(f"DEBUG: Template file type: {type(template_file)}")
-            print(f"DEBUG: Bulk file type: {type(bulk_file)}")
-
             # Read Template file
             template_df = self._read_file(template_file, "template")
             if template_df is None:
@@ -96,66 +92,109 @@ class Orchestrator:
                 result["warnings"].extend(bulk_validation["warnings"])
                 return result
 
-            # Clean Bulk data
-            cleaned_bulk_df = self.bulk_cleaner.clean_bulk(bulk_df)
+            # Clean Bulk data and separate into sheets
+            cleaned_targets_df = self.bulk_cleaner.clean_bulk(bulk_df)
             cleaning_summary = self.bulk_cleaner.get_cleaning_summary()
             result["cleaning_summary"] = cleaning_summary
 
             # Check if any rows remain after cleaning
             validation_check = self.bulk_cleaner.validate_cleaning_result(
-                cleaned_bulk_df
+                cleaned_targets_df
             )
             if not validation_check["is_valid"]:
                 result["errors"].extend(validation_check["issues"])
                 result["warnings"].extend(validation_check["warnings"])
                 return result
 
-            # Validate portfolios
+            # Validate portfolios (only on Targets sheet)
             portfolio_validation = self.portfolio_validator.validate_portfolios(
-                template_df, cleaned_bulk_df
+                template_df, cleaned_targets_df
             )
             result["portfolio_validation"] = portfolio_validation
 
-            # Update result with portfolio validation
-            result["missing_portfolios"] = portfolio_validation["missing_portfolios"]
-            result["ignored_portfolios"] = portfolio_validation["ignored_portfolios"]
-            result["excess_portfolios"] = portfolio_validation["excess_portfolios"]
-
-            # Get summary statistics
-            portfolio_summary = self.portfolio_validator.get_portfolio_summary(
-                template_df, cleaned_bulk_df
+            # Extract results
+            result["missing_portfolios"] = portfolio_validation.get(
+                "missing_portfolios", []
+            )
+            result["ignored_portfolios"] = portfolio_validation.get(
+                "ignored_portfolios", []
+            )
+            result["excess_portfolios"] = portfolio_validation.get(
+                "excess_portfolios", []
             )
 
+            # Check for blocking issues
+            if portfolio_validation.get("blocks_processing", False):
+                result["errors"].extend(portfolio_validation.get("errors", []))
+                return result
+
+            # Add warnings
+            result["warnings"].extend(portfolio_validation.get("warnings", []))
+
+            # Set stats
             result["stats"] = {
-                "original_rows": len(bulk_df),
-                "cleaned_rows": len(cleaned_bulk_df),
-                "filtered_rows": len(bulk_df) - len(cleaned_bulk_df),
-                "template_portfolios": portfolio_summary["template_total"],
-                "template_valid": portfolio_summary["template_valid"],
-                "template_ignored": portfolio_summary["template_ignored"],
-                "bulk_portfolios": portfolio_summary["bulk_unique_portfolios"],
-                "missing_count": len(result["missing_portfolios"]),
-                "ignored_count": len(result["ignored_portfolios"]),
+                "template_rows": len(template_df),
+                "bulk_rows": len(bulk_df),
+                "targets_rows": len(cleaned_targets_df),
+                "product_ads_rows": cleaning_summary["stats"].get(
+                    "product_ads_final", 0
+                ),
+                "bidding_adjustments_rows": cleaning_summary["stats"].get(
+                    "bidding_adjustments_final", 0
+                ),
             }
 
-            # Final validation result
-            result["is_valid"] = portfolio_validation["is_valid"]
+            # If we got here, validation passed
+            result["is_valid"] = True
 
-            # Add all warnings
-            result["warnings"].extend(bulk_validation.get("warnings", []))
-
-            # Store DataFrames in result for later use
+            # Store the separated dataframes for later use
+            result["separated_dataframes"] = (
+                self.bulk_cleaner.get_separated_dataframes()
+            )
             result["template_df"] = template_df
-            result["bulk_df"] = bulk_df
-            result["cleaned_bulk_df"] = cleaned_bulk_df
+
+            return result
 
         except Exception as e:
-            print(f"DEBUG: Validation error: {str(e)}")
-            print(f"DEBUG: Full traceback:\n{traceback.format_exc()}")
-            result["errors"].append(f"Validation error: {str(e)}")
-            result["is_valid"] = False
+            result["errors"].append(f"Unexpected error: {str(e)}")
+            print(f"Orchestrator validation error: {e}")
+            traceback.print_exc()
+            return result
 
-        return result
+    def process_files(
+        self,
+        template_df: pd.DataFrame,
+        separated_dataframes: Dict[str, pd.DataFrame],
+        selected_optimizations: list,
+    ) -> Tuple[BytesIO, BytesIO, Dict[str, Any]]:
+        """
+        Process files with selected optimizations
+
+        Args:
+            template_df: Template DataFrame
+            separated_dataframes: Dictionary with separated DataFrames
+                - targets: Cleaned Targets DataFrame
+                - product_ads: Product Ads DataFrame
+                - bidding_adjustments: Bidding Adjustments DataFrame
+            selected_optimizations: List of optimization names
+
+        Returns:
+            Tuple of (working_file, clean_file, stats)
+        """
+        try:
+            # Generate output files with all separated dataframes
+            working_file, clean_file, stats = self.file_generator.generate_output_files(
+                separated_dataframes=separated_dataframes,
+                selected_optimizations=selected_optimizations,
+                template_df=template_df,
+            )
+
+            return working_file, clean_file, stats
+
+        except Exception as e:
+            print(f"Orchestrator processing error: {e}")
+            traceback.print_exc()
+            raise
 
     def _read_file(self, file: BytesIO, file_type: str) -> Optional[pd.DataFrame]:
         """
@@ -169,42 +208,39 @@ class Orchestrator:
             DataFrame or None if failed
         """
         try:
-            # Check file extension from name if available
-            file_name = getattr(file, "name", "unknown")
+            print(f"DEBUG: Reading {file_type} file")
+            print(f"DEBUG: File type: {type(file)}")
 
-            # DEBUG: Print file info
-            print(f"DEBUG: Reading {file_type} file: {file_name}")
-            print(f"DEBUG: File size: {len(file.getvalue())} bytes")
+            # Reset file position to beginning
+            if hasattr(file, "seek"):
+                file.seek(0)
 
-            if file_name.endswith(".xlsx"):
-                df = self.excel_reader.read(file, file_type)
-                print(f"DEBUG: Successfully read Excel file with {len(df)} rows")
-                print(f"DEBUG: Columns: {list(df.columns)}")
-                if file_type == "template" and len(df) > 0:
-                    print(f"DEBUG: First row: {df.iloc[0].to_dict()}")
-                return df
-            elif file_name.endswith(".csv"):
-                df = self.csv_reader.read(file, file_type)
-                print(f"DEBUG: Successfully read CSV file with {len(df)} rows")
-                print(f"DEBUG: Columns: {list(df.columns)}")
-                return df
-            else:
-                # Try Excel first, then CSV
-                try:
-                    print("DEBUG: File extension not recognized, trying Excel reader")
-                    df = self.excel_reader.read(file, file_type)
-                    print(f"DEBUG: Successfully read as Excel with {len(df)} rows")
-                    return df
-                except Exception as excel_error:
-                    print(f"DEBUG: Excel read failed: {str(excel_error)}")
-                    file.seek(0)  # Reset file pointer
-                    print("DEBUG: Trying CSV reader")
-                    df = self.csv_reader.read(file, file_type)
-                    print(f"DEBUG: Successfully read as CSV with {len(df)} rows")
-                    return df
+            # Try to read as Excel first
+            if file_type == "template":
+                df = self.excel_reader.read(file)
+            else:  # bulk
+                df = self.excel_reader.read(
+                    file, sheet_name="Sponsored Products Campaigns"
+                )
+
+            print(
+                f"DEBUG: Successfully read {file_type} file with {len(df) if df is not None else 0} rows"
+            )
+            return df
 
         except Exception as e:
-            print(f"DEBUG: Error reading file: {str(e)}")
-            print(f"DEBUG: Error type: {type(e).__name__}")
-            print(f"DEBUG: Full traceback:\n{traceback.format_exc()}")
-            return None
+            print(f"ERROR: Failed to read {file_type} file: {e}")
+            import traceback
+
+            traceback.print_exc()
+
+            # Try CSV as fallback
+            try:
+                print(f"DEBUG: Trying to read as CSV")
+                file.seek(0)
+                df = self.csv_reader.read(file)
+                print(f"DEBUG: Successfully read CSV with {len(df)} rows")
+                return df
+            except Exception as csv_error:
+                print(f"ERROR: CSV read also failed: {csv_error}")
+                return None

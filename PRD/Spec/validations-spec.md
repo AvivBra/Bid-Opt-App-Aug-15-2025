@@ -150,11 +150,7 @@ def validate_bulk_structure(df):
             'product_ad': product_ad_df_cleaned,
             'bidding_adjustment': bidding_adj_df,  # לא עבר ניקוי נוסף
             'missing_portfolios': missing
-        }
-
-
-
-
+        }   
 
 
 ### תוצאות השוואה

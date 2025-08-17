@@ -30,4 +30,4 @@
 - Ad Group State (Informational only)
 
 ### הערה:
-לשונית Bidding Adjustment לא עוברת ניקוי נוסף - נשארת כמו שהיא
+לשוניות Bidding Adjustment & Portfolios  לא עוברות ניקוי נוסף - נשארות כמו שהן

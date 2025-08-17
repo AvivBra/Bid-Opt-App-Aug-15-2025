@@ -128,14 +128,14 @@ STORED: Dictionary/DataFrame for lookup
         }
 ```
 
-### Bulk Data Cleaning
-```
-INPUT:  1000 rows (all types)
-        ▼
-FILTER: Entity IN ('Keyword', 'Product Targeting')
-        State = 'enabled'
-        ▼
-OUTPUT: 400 rows (filtered)
+### Data Filtering (Inside Each Optimization)
+
+INPUT:  500000 rows (raw data passed to optimization)
+▼
+EACH OPTIMIZATION DECIDES:
+▼
+OUTPUT: Variable rows (depends on optimization's rules)
+Note: NO global filtering - each optimization receives ALL raw data
 ```
 
 ### Optimization Example (Zero Sales)

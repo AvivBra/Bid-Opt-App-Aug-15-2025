@@ -35,17 +35,15 @@
 ## Portfolio Comparison Errors (אדום)
 
 ```
-❌ Missing portfolios found ({count})
-   The following {count} portfolios are in Bulk but not in Template:
+❌ Missing portfolios found - Reupload Full Template
+The following {count} portfolios are in Bulk but not in Template:
 
-• {portfolio_1}
-• {portfolio_2}
-• {portfolio_3}
+{portfolio_1}
+{portfolio_2}
+{portfolio_3}
 
-You cannot proceed to processing until all portfolios are included.
-Please upload a new Template file with ALL the missing portfolios listed above.
-[Upload New Template] <- Use this button to upload corrected file
-[Process Files] <- Disabled until issue is resolved
+Upload a new Template file with ALL missing portfolios to continue.
+Uploading a new Template will reset the validation process.
 ```
 
 ## Processing Errors (אדום)

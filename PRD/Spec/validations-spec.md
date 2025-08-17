@@ -134,7 +134,7 @@ def validate_bulk_structure(df):
         )
         product_ads_df_cleaned = product_ads_df[product_ads_filter]
         
-        # שלב 4: חילוץ פורטפוליוז מלשונית Targets בלבד
+        # שלב 4: חילוץ פורטפוליוז מלשונית Targets בלבד (לא מ-Product Ads או Bidding Adjustments)
         bulk_portfolios = targets_df_cleaned['Portfolio Name (Informational only)'].unique()
         
         # שלב 5: חילוץ פורטפוליוז מ-Template (ללא Ignore)
@@ -154,11 +154,16 @@ def validate_bulk_structure(df):
 
 
 ### תוצאות השוואה
-| תרחיש | תוצאה | הודעה |
-|---------|--------|---------|
-| הכל תקין | 0 חסרים | "✓ All portfolios valid" |
-| חסרים פורטפוליוז | N חסרים | "Missing portfolios: {names}" |
-| כל הפורטפוליוז Ignore | - | "All portfolios marked as Ignore" |
+
+**כשהכל תקין:**
+אם אין פורטפוליוז חסרים או שכל החסרים הם מהרשימה המותרת, המערכת מציגה "✓ All portfolios valid" ומאפשרת המשך לעיבוד.
+
+**כשחסרים פורטפוליוז:**
+אם נמצאו פורטפוליוז בלשונית Targets שלא קיימים ב-Template (ולא ברשימה המותרת), המערכת מציגה "Missing portfolios found - Reupload Full Template: {names}", חוסמת המשך עיבוד ומאפשרת העלאה מחדש של Template. העלאה מחדש מאפסת את כל תהליך הולידציה.
+
+**כשכל הפורטפוליוז מסומנים כ-Ignore:**
+אם כל הפורטפוליוז ב-Template מסומנים כ-"Ignore", המערכת מציגה "All portfolios marked as Ignore" וחוסמת המשך עיבוד.
+
 
 ## 5. ולידציות אופטימיזציה
 

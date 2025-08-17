@@ -59,8 +59,9 @@ class InvalidDataError(ValidationError):
 
 class MissingPortfoliosError(ValidationError):
     code = "VAL_004"
-    message = "Portfolios missing from template"
-    user_message = "Missing portfolios: {portfolios}"
+    message = "Portfolios missing from template - processing blocked"
+    user_message = "Missing portfolios found. The following portfolios are in Bulk but not in Template: {portfolios}. Please upload a new Template file with these portfolios to continue."
+    blocks_processing = True
 ```
 
 ### Processing Errors

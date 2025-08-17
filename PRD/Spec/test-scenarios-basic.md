@@ -47,17 +47,17 @@
 ## תרחיש 2: Missing Portfolios - תיקון בעיה 🔧
 
 ### תיאור
-Template חסרים בו 2 פורטפוליוז שקיימים ב-Bulk
+Template חסרים בו 2 פורטפוליוז שקיימים ב-Bulk - עיבוד חסום
 
 ### צעדים
-1. **העלה קבצים**
-   - template_partial.xlsx (רק 3 מתוך 5 פורטפוליוז)
-   - bulk_complete.xlsx (5 פורטפוליוז)
-
+...
 2. **ראה שגיאה**
-   - רואה: "❌ Missing portfolios found"
+   - רואה: "❌ Missing portfolios found - Processing Blocked"
    - רואה: "Missing: Portfolio_D, Portfolio_E"
-   - כפתור: "Upload New Template" (אדום)
+   - רואה: "You must add these portfolios to your Template file to continue"
+   - כפתור: "Upload New Template" (אדום פעיל)
+   - כפתור: "Process Files" (אפור מושבת - לא ניתן ללחיצה)
+
 
 3. **תקן את הבעיה**
    - הכן: template_fixed.xlsx עם כל 5 הפורטפוליוז

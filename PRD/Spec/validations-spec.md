@@ -53,11 +53,11 @@ def validate_template_structure(df):
 ### בדיקת מבנה
 ```python
 def validate_bulk_structure(df):
-    # בדיקת 46 עמודות
+    # בדיקת 48 עמודות
     expected_columns = [
         "Product", "Entity", "Operation", "Campaign ID", 
         "Ad Group ID", "Portfolio ID", "Ad ID", "Keyword ID",
-        # ... כל 46 העמודות
+        # ... כל 48 העמודות
     ]
     
     if list(df.columns) != expected_columns:
@@ -74,10 +74,16 @@ def validate_bulk_structure(df):
 ### בדיקות נתונים
 | שדה | בדיקה | ערך תקין | הודעה |
 |------|--------|-----------|---------|
-| Entity | ערכים תקינים | Keyword, Product Targeting, Campaign, Ad Group | Info only |
+| Entity | ערכים תקינים | Keyword, Product Targeting, Bidding Adjustment, Campaign, Ad Group | Info only |
 | State | ערכים תקינים | enabled, paused, archived | Info only |
 | Bid | טווח | 0.02-1.25 | Warning: "{n} bids outside range" |
 | Budget | חיובי | > 0 | Warning: "Negative budgets found" |
+
+### בדיקת Bidding Adjustment
+| בדיקה | תנאי | הודעה |
+|--------|------|---------|
+| קיום Bidding Adjustment | 0 שורות עם Entity="Bidding Adjustment" | Info: "Note: No Bidding Adjustment rows found" |
+| ערכי Percentage | Percentage < 0 או > 900 | Warning: "Unusual Percentage values detected" |
 
 ## 4. ולידציות השוואה (Template vs Bulk)
 
@@ -86,138 +92,113 @@ def validate_bulk_structure(df):
 def clean_and_compare(bulk_df, template_df):
     # 1. ניקוי Bulk
     cleaned = bulk_df[
-        (bulk_df['Entity'].isin(['Keyword', 'Product Targeting'])) &
+        (bulk_df['Entity'].isin(['Keyword', 'Product Targeting', 'Bidding Adjustment'])) &
         (bulk_df['State'] == 'enabled') &
         (bulk_df['Campaign State (Informational only)'] == 'enabled') &
         (bulk_df['Ad Group State (Informational only)'] == 'enabled')
     ]
     
-    # 2. הסרת ignored
-    ignored_portfolios = template_df[
-        template_df['Base Bid'] == 'Ignore'
-    ]['Portfolio Name'].tolist()
-    
-    cleaned = cleaned[
-        ~cleaned['Portfolio Name (Informational only)'].isin(ignored_portfolios)
-    ]
-    
-    # 3. השוואה
+    # 2. חילוץ פורטפוליוז מ-Bulk
     bulk_portfolios = cleaned['Portfolio Name (Informational only)'].unique()
-    template_portfolios = template_df[
-        template_df['Base Bid'] != 'Ignore'
-    ]['Portfolio Name'].tolist()
     
+    # 3. חילוץ פורטפוליוז מ-Template (ללא Ignore)
+    template_portfolios = template_df[
+        template_df['Base Bid'].str.lower() != 'ignore'
+    ]['Portfolio Name'].unique()
+    
+    # 4. השוואה
     missing = set(bulk_portfolios) - set(template_portfolios)
     
     return missing
 ```
 
 ### תוצאות השוואה
-| מצב | תיאור | הודעה | פעולה |
-|-----|--------|---------|---------|
-| תקין | כל הפורטפוליוז קיימים | "✓ All portfolios valid" | אפשר Process |
-| חסרים | פורטפוליוז בBulk אך לא בTemplate | "Missing portfolios: {list}" | דרוש Template חדש |
-| ריק אחרי ניקוי | 0 שורות אחרי סינון | "No valid rows after filtering" | בדוק את הBulk |
+| תרחיש | תוצאה | הודעה |
+|---------|--------|---------|
+| הכל תקין | 0 חסרים | "✓ All portfolios valid" |
+| חסרים פורטפוליוז | N חסרים | "Missing portfolios: {names}" |
+| כל הפורטפוליוז Ignore | - | "All portfolios marked as Ignore" |
 
-## 5. ולידציות בזמן עיבוד
+## 5. ולידציות אופטימיזציה
 
-### בדיקות Pre-Processing
-| בדיקה | תנאי | פעולה |
-|--------|------|--------|
-| זיכרון פנוי | < 100MB | Warning + המשך עם chunks |
-| משך זמן | > 60 שניות | Show progress bar |
-| נתונים תקינים | NaN values | Skip rows with warning |
+### Zero Sales - לפני עיבוד
+| בדיקה | תנאי | הודעה |
+|--------|------|---------|
+| Units column exists | חסרה עמודת Units | Error: "Units column required for Zero Sales" |
+| Clicks column exists | חסרה עמודת Clicks | Error: "Clicks column required for Zero Sales" |
+| Percentage column exists | חסרה עמודת Percentage | Warning: "Percentage column missing - Max BA will default to 1" |
 
-### בדיקות Post-Processing
-| בדיקה | תיאור | הודעה |
-|--------|--------|---------|
-| Calculation errors | שורות שנכשל חישוב | Pink: "7 calculation errors" |
-| Out of range | Bid < 0.02 או > 1.25 | Info: "15 bids outside range" |
-| No changes | אין שינויים | Warning: "No changes made" |
+### Zero Sales - אחרי עיבוד
+| בדיקה | תנאי | הודעה |
+|--------|------|---------|
+| Bid range check | Bid < 0.02 | Pink highlight + count in message |
+| Bid range check | Bid > 1.25 | Pink highlight + count in message |
+| Calculation errors | NaN or null in Bid | Pink highlight + count in message |
+| Final message | סיכום | "{X} rows below 0.02, {Y} rows above 1.25, {Z} rows with calculation errors" |
 
-## 6. סדר הולידציות
+## 6. ולידציות קבצי פלט
 
-### Upload Phase
-1. בדיקת פורמט קובץ
-2. בדיקת גודל
-3. ניסיון קריאה
-4. בדיקת מבנה (עמודות)
-5. בדיקת נתונים
+### בדיקת מבנה
+| בדיקה | תנאי | הודעת שגיאה |
+|--------|------|--------------|
+| Sheet count | פחות מהצפוי | "Missing output sheets" |
+| Column count | לא 48 + עמודות עזר | "Invalid column structure" |
+| Operation column | לא כל השורות "Update" | "Operation column not properly set" |
 
-### Validation Phase
-1. ניקוי Bulk
-2. חילוץ portfolios
-3. השוואה עם Template
-4. בדיקת תוצאות
+### בדיקת תוכן
+| בדיקה | תנאי | הודעת שגיאה |
+|--------|------|--------------|
+| Empty sheets | 0 שורות | "Output sheet is empty" |
+| Data integrity | מספר שורות לא תואם | "Row count mismatch" |
+| Helper columns | חסרות עמודות עזר | "Helper columns missing" |
 
-### Processing Phase
-1. Pre-checks (זיכרון, נתונים)
-2. Apply optimizations
-3. Post-checks (שגיאות, טווחים)
-4. Generate files
+## 7. הודעות אזהרה (Warnings)
 
-## 7. Error Recovery
+### Template Warnings
+- "Portfolio names contain special characters"
+- "Some Base Bid values are very high (>5.00)"
+- "Many portfolios have no Target CPA"
 
-### ולידציות עם Recovery
-```python
-def validate_with_recovery(file):
-    try:
-        # Try normal read
-        df = pd.read_excel(file)
-    except UnicodeDecodeError:
-        # Try different encoding
-        df = pd.read_excel(file, encoding='latin1')
-    except Exception as e:
-        # Last resort - try CSV
-        try:
-            df = pd.read_csv(file)
-        except:
-            raise FileReadError("Cannot read file in any format")
-    
-    return df
+### Bulk Warnings
+- "Large file detected - processing may take longer"
+- "Many disabled rows will be filtered out"
+- "Note: No Bidding Adjustment rows found"
+
+### Processing Warnings
+- "Some calculations resulted in extreme bid values"
+- "Many rows unchanged by optimization"
+- "Processing time exceeded expectations"
+
+## 8. סדר ביצוע ולידציות
+
 ```
+1. File Validation
+   ├── Size check
+   ├── Format check
+   └── Corruption check
 
-## 8. Performance Validations
+2. Structure Validation
+   ├── Column validation
+   ├── Sheet validation
+   └── Row count validation
 
-### Timeout Settings
-| פעולה | Timeout | פעולה בTimeout |
-|--------|---------|----------------|
-| קריאת קובץ | 30 שניות | Cancel + Error |
-| ולידציה | 10 שניות | Continue with warning |
-| עיבוד | 120 שניות | Show "Still working..." |
-| יצירת פלט | 60 שניות | Retry once |
+3. Data Validation
+   ├── Required fields
+   ├── Data types
+   └── Value ranges
 
-## 9. הודעות ולידציה לפי חומרה
+4. Cross-file Validation
+   ├── Portfolio matching
+   ├── Bidding Adjustment check
+   └── Consistency checks
 
-### Critical (חוסם המשך)
-- Missing required columns
-- File too large
-- All portfolios ignored
-- No rows after filtering
+5. Optimization Validation
+   ├── Pre-processing checks
+   ├── Calculation checks
+   └── Post-processing checks
 
-### Warning (לא חוסם)
-- Special characters in names
-- Bids outside recommended range
-- Large file (>20MB)
-- Many portfolios (>100)
-
-### Info (למידע בלבד)
-- Number of rows processed
-- Ignored portfolios count
-- Optimization statistics
-
-## 10. Custom Validations לכל אופטימיזציה
-
-### Zero Sales
-- בדיקה: יש עמודת Sales
-- בדיקה: יש שורות עם Sales = 0
-
-### Portfolio Bid
-- בדיקה: יש Target CPA בTemplate
-- בדיקה: Portfolio names match
-
-### Budget Optimization
-- בדיקה: יש עמודת Daily Budget
-- בדיקה: Budget > 0
-
-[וכן הלאה לכל 14 האופטימיזציות]
+6. Output Validation
+   ├── File structure
+   ├── Data integrity
+   └── Error highlighting
+```

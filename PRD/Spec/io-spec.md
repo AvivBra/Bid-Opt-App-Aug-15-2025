@@ -39,7 +39,7 @@ Supplements-EU   | 2.10     | 8.50
 - **Sheet נדרש:** "Sponsored Products Campaigns"
 - **קידוד:** UTF-8
 
-### 46 עמודות (בדיוק בסדר הזה)
+### 48 עמודות (בדיוק בסדר הזה)
 ```
 1. Product
 2. Entity
@@ -93,7 +93,7 @@ Supplements-EU   | 2.10     | 8.50
 
 ### סינון אוטומטי (Bulk Cleaning)
 המערכת מסננת רק שורות ש:
-- Entity = "Keyword" או "Product Targeting"
+- Entity = "Keyword" או "Product Targeting" או "Bidding Adjustment"
 - State = "enabled"
 - Campaign State (Informational only) = "enabled"
 - Ad Group State (Informational only) = "enabled"
@@ -106,23 +106,36 @@ Supplements-EU   | 2.10     | 8.50
 - **דוגמה:** `Auto Optimized Bulk | Working | 2024-01-15 | 14-30.xlsx`
 
 ### Sheets
-לכל אופטימיזציה שנבחרה, 2 sheets:
+לכל אופטימיזציה שנבחרה:
+
+**Zero Sales - 3 sheets:**
+1. `Clean Zero Sales` - Keywords/Product Targeting עם עמודות עזר
+2. `Bidding Adjustment Zero Sales` - Bidding Adjustments בלבד
+3. `Working Zero Sales` - זהה ל-Clean (שמור לעתיד)
+
+**אופטימיזציות אחרות - 2 sheets לכל אחת:**
 1. `Clean {OptimizationName}`
 2. `Working {OptimizationName}`
 
-### דוגמה למבנה Sheets
-אם נבחרו Zero Sales ו-Portfolio Bid:
-```
-- Clean Zero Sales
-- Working Zero Sales
-- Clean Portfolio Bid
-- Working Portfolio Bid
-```
+### עמודות עזר (Zero Sales בלבד)
+מוספות משמאל לעמודה Bid (רק בלשונית הראשית):
+- Max BA
+- Base Bid
+- Target CPA
+- Adj. CPA
+- Old Bid
+- calc1
+- calc2
 
 ### תוכן
-- **Clean sheets:** אותן 46 עמודות כמו Bulk, עם שינויים בערכים
-- **Working sheets:** אותן 46 עמודות + עמודות עזר (בגרסה עתידית)
+- **Clean sheets:** 48 עמודות מקוריות + עמודות עזר (באופטימיזציות רלוונטיות)
+- **Working sheets:** זהה ל-Clean (בגרסה עתידית יכלול עמודות נוספות)
+- **Bidding Adjustment sheets:** 48 עמודות מקוריות בלבד, ללא עמודות עזר
 - **כל השורות:** Operation = "Update"
+
+### סימון שגיאות
+- שורות עם Bid < 0.02 או Bid > 1.25 מסומנות בצבע ורוד
+- שורות עם שגיאת חישוב מסומנות בצבע ורוד
 
 ## 4. Clean File - פלט
 
@@ -132,20 +145,18 @@ Supplements-EU   | 2.10     | 8.50
 - **דוגמה:** `Auto Optimized Bulk | Clean | 2024-01-15 | 14-30.xlsx`
 
 ### Sheets
-לכל אופטימיזציה שנבחרה, sheet אחד:
+לכל אופטימיזציה שנבחרה:
+
+**Zero Sales - 2 sheets:**
+1. `Clean Zero Sales` - Keywords/Product Targeting עם עמודות עזר
+2. `Bidding Adjustment Zero Sales` - Bidding Adjustments בלבד
+
+**אופטימיזציות אחרות - 1 sheet לכל אחת:**
 - `Clean {OptimizationName}`
 
-### דוגמה למבנה Sheets
-אם נבחרו Zero Sales ו-Portfolio Bid:
-```
-- Clean Zero Sales
-- Clean Portfolio Bid
-```
-
 ### תוכן
-- אותן 46 עמודות כמו Bulk
-- ערכים מעודכנים לפי האופטימיזציה
-- כל השורות: Operation = "Update"
+- זהה לWorking File (כרגע)
+- בעתיד: ללא עמודות עזר
 
 ## 5. Empty Template - להורדה
 
@@ -200,30 +211,15 @@ Portfolio Name | Base Bid | Target CPA
 | בעיה | טיפול |
 |------|--------|
 | Sheet חסר | שגיאה: "Sheet 'Sponsored Products Campaigns' not found" |
-| 46 עמודות חסרות | שגיאה: "Missing required columns" |
+| 48 עמודות חסרות | שגיאה: "Missing required columns" |
 | מעל 500K שורות | שגיאה: "File exceeds 500,000 rows" |
 | קובץ ריק אחרי סינון | שגיאה: "No valid rows after filtering" |
 
-## 9. דוגמאות קבצים
+## 9. הודעות למשתמש
 
-### Template - תקין
-```csv
-Portfolio Name,Base Bid,Target CPA
-Campaign-A,1.25,5.00
-Campaign-B,0.95,
-Campaign-C,Ignore,
-```
-
-### Template - שגוי
-```csv
-Portfolio,Bid Amount  <- שמות עמודות שגויים
-Campaign-A,1.25
-Campaign-B,ABC       <- Base Bid לא מספרי
-```
-
-### Bulk - מבנה (רק 5 עמודות ראשונות לדוגמה)
-```csv
-Product,Entity,Operation,Campaign ID,Ad Group ID,...
-ASIN123,Keyword,Create,1234567890,9876543210,...
-ASIN456,Product Targeting,Update,2345678901,8765432109,...
-```
+### Zero Sales Optimization
+| מצב | הודעה |
+|-----|--------|
+| אין Bidding Adjustment | "Note: No Bidding Adjustment rows found" |
+| ערכי Bid חריגים | "{X} rows below 0.02, {Y} rows above 1.25" |
+| שגיאות חישוב | "{Z} rows with calculation errors" |

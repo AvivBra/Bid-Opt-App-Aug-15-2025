@@ -22,7 +22,7 @@ bid-optimizer/
   - רק State=enabled
   - השוואת פורטפוליוז אמיתית
 - **מספרים אמיתיים:**
-  - "Missing portfolios: Port_ABC, Port_DEF" (שמות אמיתיים מהקובץ)
+  - "Missing portfolios (2): Port_ABC, Port_DEF" (מספר + שמות אמיתיים מהקובץ)
   - "1,234 rows after filtering (was 5,678)"
 - **הודעות שגיאה ספציפיות:**
   - "Portfolio 'XYZ' has Base Bid='Ignore' - skipping"

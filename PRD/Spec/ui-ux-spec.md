@@ -99,14 +99,16 @@ All portfolios in Bulk file have Base Bid values in Template
 ```
 Validation Results
 ──────────────────
-❌ Missing portfolios found
+❌ Missing portfolios found - Processing Blocked
+The following 3 portfolios are in Bulk but not in Template:
 
-The following portfolios are in Bulk but not in Template:
-• Portfolio_ABC
-• Portfolio_DEF
-• Portfolio_GHI
+- Portfolio_ABC
+- Portfolio_DEF
+- Portfolio_GHI
 
+You must add these portfolios to your Template file to continue.
 [Upload New Template]  <- כפתור אדום
+[Process Files]  <- כפתור אפור מושבת
 ```
 
 ### מצב עיבוד

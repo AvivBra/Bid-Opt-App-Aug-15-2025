@@ -1,8 +1,13 @@
 # לוגיקת אופטימיזציית זירו סיילס
 
-## תהליך האופטימיזציה - 4 שלבים
+## תהליך האופטימיזציה - 5 שלבים
 
-### שלב 1: ניקוי הדאטה
+
+### שלב 1: וולידציה
+
+מתואר בקובץ נפרד: valudation-spec.md
+
+### שלב 2: ניקוי הדאטה
 
 משאירים רק שורות שעונות על **כל** התנאים הבאים:
 
@@ -22,44 +27,43 @@
    - Flat 20 | Opt
    - Flat 15 | Opt
 
-### שלב 2: הפרדת Bidding Adjustment
+**משאירים רק שורות עם:**
+- Entity = Keyword
+- Entity = Product Targeting  
+- Entity = Product Ad
+- Entity = Bidding Adjustment
 
-1. **יצירת לשונית נפרדת**  
-   כל השורות שה-Entity שלהן הוא "Bidding Adjustment" מועברות ללשונית נפרדת
+### שלב 3: חלוקה ללשוניות 
 
-2. **שם הלשונית**  
-   "Bidding Adjustment Zero Sales"
+**מפרידים ל-3 לשוניות:**
+1. לשונית ראשית: Keyword + Product Targeting
+2. לשונית נפרדת: Bidding Adjustment
+3. לשונית נפרדת: Product Ad
 
-3. **הלשונית הראשית**  
-   נשארות רק שורות עם Entity = "Keyword" או "Product Targeting"
 
-4. **טיפול במקרה חסר**  
-   אם אין שורות Bidding Adjustment:
-   - הודעה למשתמש: "Note: No Bidding Adjustment rows found"
-   - Max BA יקבל ערך ברירת מחדל של 1
-
-### שלב 3: הוספת עמודות עזר וחישובן
+### שלב 34: הוספת עמודות עזר וחישובן
 
 הוספת עמודות עזר **משמאל לעמודה Bid** (רק בלשונית הראשית, לא ב-Bidding Adjustment):
+1. **Old Bid** = Bid (שמירת הערך המקורי)
 
-1. **Max BA** - הערך המקסימלי מעמודה Percentage בשורות שבהן:
+2. **calc1** - חישוב ביניים (ראה מקרים ג-ד)
+
+3. **calc2** - חישוב ביניים (ראה מקרים ג-ד)
+
+4. **Target CPA** - העתקה מקובץ Template לפי שם Portfolio
+
+5. **Base Bid** - העתקה מקובץ Template לפי שם Portfolio
+
+6. **Adj. CPA** = Target CPA × (1 + Max BA/100)
+
+7. **Max BA** - הערך המקסימלי מעמודה Percentage בשורות שבהן:
    - Entity = "Bidding Adjustment"
    - Campaign ID = Campaign ID של השורה הנוכחית
    - אם אין התאמות: ערך ברירת מחדל = 1
 
-2. **Base Bid** - העתקה מקובץ Template לפי שם Portfolio
 
-3. **Target CPA** - העתקה מקובץ Template לפי שם Portfolio
 
-4. **Adj. CPA** = Target CPA × (1 + Max BA/100)
-
-5. **Old Bid** = Bid (שמירת הערך המקורי)
-
-6. **calc1** - חישוב ביניים (ראה מקרים ג-ד)
-
-7. **calc2** - חישוב ביניים (ראה מקרים ג-ד)
-
-### שלב 4: חישוב הביד החדש
+### שלב 45: חישוב הביד החדש
 
 החישוב מתחלק ל-4 מקרים:
 

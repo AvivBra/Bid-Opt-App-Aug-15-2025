@@ -1,4 +1,7 @@
-# מפרט ולידציות - Bid Optimizer
+# ולידציות Zero Sales - כל הבדיקות הנדרשות לאופטימיזציה זו
+
+**הערה:** אופטימיזציית Zero Sales מבצעת את כל הוולידציות הבאות.
+אופטימיזציות אחרות עשויות לבצע ולידציות שונות לגמרי.
 
 ## 1. ולידציות קבצים
 
@@ -105,52 +108,6 @@ def validate_bulk_structure(df):
 | ערכי Percentage | Percentage < 0 או > 900 | Warning: "Unusual Percentage values detected" |
 
 ## 4. ולידציות השוואה (Template vs Bulk)
-
-### תהליך הניקו
-
-    def clean_and_separate(bulk_df, template_df):
-        # שלב 1: סינון Entity
-        entity_filter = bulk_df['Entity'].isin(['Keyword', 'Product Targeting', 'Product Ad', 'Bidding Adjustment'])
-        filtered = bulk_df[entity_filter]
-        
-        # שלב 2: הפרדה ללשוניות
-        targets_df = filtered[filtered['Entity'].isin(['Keyword', 'Product Targeting'])]
-        product_ads_df = filtered[filtered['Entity'] == 'Product Ad']
-        bidding_adjustments_df = filtered[filtered['Entity'] == 'Bidding Adjustment']
-        
-        # שלב 3: ניקוי נוסף - רק ללשוניות Targets ו-Product Ads
-        # (Bidding Adjustments לא עובר ניקוי נוסף)
-        state_filter = (
-            (targets_df['State'] == 'enabled') &
-            (targets_df['Campaign State (Informational only)'] == 'enabled') &
-            (targets_df['Ad Group State (Informational only)'] == 'enabled')
-        )
-        targets_df_cleaned = targets_df[state_filter]
-        
-        product_ads_filter = (
-            (product_ads_df['State'] == 'enabled') &
-            (product_ads_df['Campaign State (Informational only)'] == 'enabled') &
-            (product_ads_df['Ad Group State (Informational only)'] == 'enabled')
-        )
-        product_ads_df_cleaned = product_ads_df[product_ads_filter]
-        
-        # שלב 4: חילוץ פורטפוליוז מלשונית Targets בלבד (לא מ-Product Ads או Bidding Adjustments)
-        bulk_portfolios = targets_df_cleaned['Portfolio Name (Informational only)'].unique()
-        
-        # שלב 5: חילוץ פורטפוליוז מ-Template (ללא Ignore)
-        template_portfolios = template_df[
-            template_df['Base Bid'].str.lower() != 'ignore'
-        ]['Portfolio Name'].unique()
-        
-        # שלב 6: השוואה
-        missing = set(bulk_portfolios) - set(template_portfolios)
-        
-        return {
-            'targets': targets_df_cleaned,
-            'product_ads': product_ads_df_cleaned,
-            'bidding_adjustments': bidding_adjustments_df,  # לא עבר ניקוי נוסף
-            'missing_portfolios': missing
-        }
 
 
 ### תוצאות השוואה

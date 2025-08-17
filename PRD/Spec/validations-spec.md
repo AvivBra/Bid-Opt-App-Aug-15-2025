@@ -106,52 +106,53 @@ def validate_bulk_structure(df):
 
 ## 4. ולידציות השוואה (Template vs Bulk)
 
-### תהליך הניקוי והשוואה
-```python
-def clean_and_compare(bulk_df, template_df):
-    # 1. ניקוי Bulk
-    # סינון לפי Entity - כולל Product Ad
-    entity_filter = bulk_df['Entity'].isin(['Keyword', 'Product Targeting', 'Product Ad', 'Bidding Adjustment'])
-    
-    # סינון לפי State - Bidding Adjustment לא מסונן
-    state_filter = (bulk_df['State'] == 'enabled') | (bulk_df['Entity'] == 'Bidding Adjustment')
-    
-    # סינון לפי Campaign State - Bidding Adjustment לא מסונן
-    campaign_state_filter = (bulk_df['Campaign State (Informational only)'] == 'enabled') | (bulk_df['Entity'] == 'Bidding Adjustment')
-    
-    # סינון לפי Ad Group State - Bidding Adjustment לא מסונן
-    ad_group_state_filter = (bulk_df['Ad Group State (Informational only)'] == 'enabled') | (bulk_df['Entity'] == 'Bidding Adjustment')
-    
-    # החלת כל הסינונים
-    cleaned = bulk_df[
-        entity_filter & 
-        state_filter & 
-        campaign_state_filter & 
-        ad_group_state_filter
-    ]
-    
-    # 2. הפרדה ללשוניות
-    main_df = cleaned[cleaned['Entity'].isin(['Keyword', 'Product Targeting'])]
-    product_ad_df = cleaned[cleaned['Entity'] == 'Product Ad']
-    bidding_adj_df = cleaned[cleaned['Entity'] == 'Bidding Adjustment']
-    
-    # 3. חילוץ פורטפוליוז מ-Bulk (מהלשונית הראשית בלבד)
-    bulk_portfolios = main_df['Portfolio Name (Informational only)'].unique()
-    
-    # 4. חילוץ פורטפוליוז מ-Template (ללא Ignore)
-    template_portfolios = template_df[
-        template_df['Base Bid'].str.lower() != 'ignore'
-    ]['Portfolio Name'].unique()
-    
-    # 5. השוואה
-    missing = set(bulk_portfolios) - set(template_portfolios)
-    
-    return {
-        'main': main_df,
-        'product_ad': product_ad_df,
-        'bidding_adjustment': bidding_adj_df,
-        'missing_portfolios': missing
-    }
+### תהליך הניקו
+
+    def clean_and_separate(bulk_df, template_df):
+        # שלב 1: סינון Entity
+        entity_filter = bulk_df['Entity'].isin(['Keyword', 'Product Targeting', 'Product Ad', 'Bidding Adjustment'])
+        filtered = bulk_df[entity_filter]
+        
+        # שלב 2: הפרדה ללשוניות
+        main_df = filtered[filtered['Entity'].isin(['Keyword', 'Product Targeting'])]
+        product_ad_df = filtered[filtered['Entity'] == 'Product Ad']
+        bidding_adj_df = filtered[filtered['Entity'] == 'Bidding Adjustment']
+        
+        # שלב 3: ניקוי נוסף - רק ללשונית הראשית ו-Product Ad
+        # (Bidding Adjustment לא עובר ניקוי נוסף)
+        state_filter = (
+            (main_df['State'] == 'enabled') &
+            (main_df['Campaign State (Informational only)'] == 'enabled') &
+            (main_df['Ad Group State (Informational only)'] == 'enabled')
+        )
+        main_df_cleaned = main_df[state_filter]
+        
+        product_ad_filter = (
+            (product_ad_df['State'] == 'enabled') &
+            (product_ad_df['Campaign State (Informational only)'] == 'enabled') &
+            (product_ad_df['Ad Group State (Informational only)'] == 'enabled')
+        )
+        product_ad_df_cleaned = product_ad_df[product_ad_filter]
+        
+        # שלב 4: חילוץ פורטפוליוז מהלשונית הראשית בלבד
+        bulk_portfolios = main_df_cleaned['Portfolio Name (Informational only)'].unique()
+        
+        # שלב 5: חילוץ פורטפוליוז מ-Template (ללא Ignore)
+        template_portfolios = template_df[
+            template_df['Base Bid'].str.lower() != 'ignore'
+        ]['Portfolio Name'].unique()
+        
+        # שלב 6: השוואה
+        missing = set(bulk_portfolios) - set(template_portfolios)
+        
+        return {
+            'main': main_df_cleaned,
+            'product_ad': product_ad_df_cleaned,
+            'bidding_adjustment': bidding_adj_df,  # לא עבר ניקוי נוסף
+            'missing_portfolios': missing
+        }
+
+
 
 
 

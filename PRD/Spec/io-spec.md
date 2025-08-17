@@ -92,11 +92,25 @@ Supplements-EU   | 2.10     | 8.50
 ```
 
 ### סינון אוטומטי (Bulk Cleaning)
-המערכת מסננת רק שורות ש:
-- Entity = "Keyword" או "Product Targeting" או "Product Ad" או "Bidding Adjustment"
-- State = "enabled" (חוץ מ-Bidding Adjustment שעובר תמיד)
-- Campaign State (Informational only) = "enabled" (חוץ מ-Bidding Adjustment שעובר תמיד)
-- Ad Group State (Informational only) = "enabled" (חוץ מ-Bidding Adjustment שעובר תמיד)
+
+#### שלב 1: סינון והפרדה
+מהלשונית "Sponsored Products Campaigns":
+- משאירים רק שורות עם Entity = "Keyword" או "Product Targeting" או "Product Ad" או "Bidding Adjustment"
+- מפרידים ל-3 לשוניות:
+  1. לשונית ראשית: Keyword + Product Targeting
+  2. לשונית Product Ad: Product Ad בלבד
+  3. לשונית Bidding Adjustment: Bidding Adjustment בלבד
+
+#### שלב 2: ניקוי נוסף
+רק בלשוניות הראשית ו-Product Ad (לא ב-Bidding Adjustment):
+- מוחקים שורות שאינן enabled בכל 3 העמודות:
+  - State = "enabled"
+  - Campaign State (Informational only) = "enabled"
+  - Ad Group State (Informational only) = "enabled"
+
+#### לשוניות נוספות
+- לשונית "Portfolios" (אם קיימת) - נשמרת כמו שהיא
+
 
 ## 3. Working File - פלט
 
@@ -224,7 +238,19 @@ Portfolio Name | Base Bid | Target CPA
 | מעל 500K שורות | שגיאה: "File exceeds 500,000 rows" |
 | קובץ ריק אחרי סינון | שגיאה: "No valid rows after filtering" |
 
-## 9. הודעות למשתמש
+
+## 9a. לשוניות נוספות מהקובץ המקורי
+
+### לשונית Portfolios
+- אם קיימת לשונית "Portfolios" בקובץ הBulk המקורי, היא תועתק כמו שהיא לקבצי הפלט
+- הלשונית תישמר בשמה המקורי ללא שינויים בנתונים
+
+### לשוניות אחרות
+- כל לשונית נוספת מלבד "Sponsored Products Campaigns" תועתק ללא שינוי לקבצי הפלט
+
+
+
+## 9b. הודעות למשתמש
 
 ### Zero Sales Optimization
 

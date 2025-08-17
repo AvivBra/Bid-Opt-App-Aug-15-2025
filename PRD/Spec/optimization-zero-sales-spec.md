@@ -41,15 +41,16 @@ Filter rows where ALL conditions are met:
 
 ### Step 2: Entity Separation
 
-1. **Create separate sheet** for Entity = "Bidding Adjustment"
-   - Sheet name: "Bidding Adjustment Zero Sales"
+3. **Create separate sheet** for Entity = "Product Ad"
+   - Sheet name: "Product Ad Zero Sales"
    - No helper columns added
    - No bid calculations performed
-   
-2. **Main sheet** contains Entity = "Keyword" or "Product Targeting"
+   - These rows are preserved as-is from the cleaning stage
+
+4. **Main sheet** now contains only Entity = "Keyword" or "Product Targeting"
    - Sheet name: "Clean Zero Sales"
-   - Helper columns added
-   - Bid calculations performed
+   - Helper columns added to this sheet only
+   - Bid calculations performed on this sheet only
 
 3. **Handle missing Bidding Adjustments**
    - Show notification: "Note: No Bidding Adjustment rows found"

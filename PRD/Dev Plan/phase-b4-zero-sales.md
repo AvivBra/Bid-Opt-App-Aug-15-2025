@@ -20,6 +20,7 @@ bid-optimizer/
   - "Clean Zero Sales" - Keywords/Product Targeting עם עמודות עזר
   - "Bidding Adjustment Zero Sales" - Bidding Adjustments בלבד
   - "Working Zero Sales" - זהה ל-Clean (לעתיד)
+  - "Product Ad Zero Sales" - Product Ad בלבד (ללא עמודות עזר)
 
 - **עמודות עזר חדשות (משמאל ל-Bid):**
   - Max BA, Base Bid, Target CPA, Adj. CPA

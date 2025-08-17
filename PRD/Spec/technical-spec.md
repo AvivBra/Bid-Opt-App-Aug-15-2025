@@ -49,6 +49,9 @@ datetime              # תאריכים לשמות קבצים
 **Bulk (48 עמודות):**
 Product, Entity, Operation, Campaign ID, Ad Group ID, Portfolio ID, Ad ID, Keyword ID, Product Targeting ID, Campaign Name, Ad Group Name, Campaign Name (Informational only), Ad Group Name (Informational only), Portfolio Name (Informational only), Start Date, End Date, Targeting Type, State, Campaign State (Informational only), Ad Group State (Informational only), Daily Budget, SKU, ASIN, Eligibility Status (Informational only), Reason for Ineligibility (Informational only), Ad Group Default Bid, Ad Group Default Bid (Informational only), Bid, Keyword Text, Native Language Keyword, Native Language Locale, Match Type, Bidding Strategy, Placement, Percentage, Product Targeting Expression, Resolved Product Targeting Expression (Informational only), Impressions, Clicks, Click-through Rate, Spend, Sales, Orders, Units, Conversion Rate, ACOS, CPC, ROAS
 
+### לשוניות נוספות
+- המערכת שומרת את לשונית "Portfolios" אם קיימת
+
 ## 3. דרישות סביבה
 
 ### מערכת הפעלה

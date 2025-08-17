@@ -93,10 +93,10 @@ Supplements-EU   | 2.10     | 8.50
 
 ### סינון אוטומטי (Bulk Cleaning)
 המערכת מסננת רק שורות ש:
-- Entity = "Keyword" או "Product Targeting" או "Bidding Adjustment"
-- State = "enabled"
-- Campaign State (Informational only) = "enabled"
-- Ad Group State (Informational only) = "enabled"
+- Entity = "Keyword" או "Product Targeting" או "Product Ad" או "Bidding Adjustment"
+- State = "enabled" (חוץ מ-Bidding Adjustment שעובר תמיד)
+- Campaign State (Informational only) = "enabled" (חוץ מ-Bidding Adjustment שעובר תמיד)
+- Ad Group State (Informational only) = "enabled" (חוץ מ-Bidding Adjustment שעובר תמיד)
 
 ## 3. Working File - פלט
 
@@ -108,14 +108,20 @@ Supplements-EU   | 2.10     | 8.50
 ### Sheets
 לכל אופטימיזציה שנבחרה:
 
-**Zero Sales - 3 sheets:**
-1. `Clean Zero Sales` - Keywords/Product Targeting עם עמודות עזר
-2. `Bidding Adjustment Zero Sales` - Bidding Adjustments בלבד
-3. `Working Zero Sales` - זהה ל-Clean (שמור לעתיד)
+### Sheets
+לכל אופטימיזציה שנבחרה:
 
-**אופטימיזציות אחרות - 2 sheets לכל אחת:**
-1. `Clean {OptimizationName}`
-2. `Working {OptimizationName}`
+**Zero Sales - 4 sheets:**
+1. `Clean Zero Sales` - Keywords/Product Targeting בלבד עם עמודות עזר
+2. `Product Ad Zero Sales` - Product Ad בלבד
+3. `Bidding Adjustment Zero Sales` - Bidding Adjustments בלבד
+4. `Working Zero Sales` - זהה ל-Clean (שמור לעתיד)
+
+**אופטימיזציות אחרות - 4 sheets לכל אחת:**
+1. `Clean {OptimizationName}` - Keywords/Product Targeting בלבד
+2. `Product Ad {OptimizationName}` - Product Ad בלבד  
+3. `Bidding Adjustment {OptimizationName}` - Bidding Adjustments בלבד
+4. `Working {OptimizationName}`
 
 ### עמודות עזר (Zero Sales בלבד)
 מוספות משמאל לעמודה Bid (רק בלשונית הראשית):
@@ -147,12 +153,15 @@ Supplements-EU   | 2.10     | 8.50
 ### Sheets
 לכל אופטימיזציה שנבחרה:
 
-**Zero Sales - 2 sheets:**
-1. `Clean Zero Sales` - Keywords/Product Targeting עם עמודות עזר
-2. `Bidding Adjustment Zero Sales` - Bidding Adjustments בלבד
+**Zero Sales - 3 sheets:**
+1. `Clean Zero Sales` - Keywords/Product Targeting בלבד עם עמודות עזר
+2. `Product Ad Zero Sales` - Product Ad בלבד
+3. `Bidding Adjustment Zero Sales` - Bidding Adjustments בלבד
 
-**אופטימיזציות אחרות - 1 sheet לכל אחת:**
-- `Clean {OptimizationName}`
+**אופטימיזציות אחרות - 3 sheets לכל אחת:**
+1. `Clean {OptimizationName}` - Keywords/Product Targeting בלבד
+2. `Product Ad {OptimizationName}` - Product Ad בלבד
+3. `Bidding Adjustment {OptimizationName}` - Bidding Adjustments בלבד
 
 ### תוכן
 - זהה לWorking File (כרגע)
@@ -218,8 +227,33 @@ Portfolio Name | Base Bid | Target CPA
 ## 9. הודעות למשתמש
 
 ### Zero Sales Optimization
-| מצב | הודעה |
-|-----|--------|
-| אין Bidding Adjustment | "Note: No Bidding Adjustment rows found" |
-| ערכי Bid חריגים | "{X} rows below 0.02, {Y} rows above 1.25" |
-| שגיאות חישוב | "{Z} rows with calculation errors" |
+
+**הודעות על Entity Types:**
+- אם אין שורות של Bidding Adjustment, המערכת תציג: "Note: No Bidding Adjustment rows found"
+
+**הודעות על ערכי Bid חריגים בשורות של Keyword  Product Targeting**
+
+- אם יש שורות עם Bid מתחת ל-0.02, המערכת תציג: "{X} rows below 0.02"
+- אם יש שורות עם Bid מעל 1.25, המערכת תציג: "{Y} rows above 1.25"
+- אם יש גם וגם, המערכת תציג: "{X} rows below 0.02, {Y} rows above 1.25"
+
+**הודעות על שגיאות חישוב:**
+- אם יש שורות עם שגיאות חישוב, המערכת תציג: "{Z} rows with calculation errors"
+- ההודעה תופיע בתיבה ורודה (Pink notice box)
+
+### הודעות כלליות לכל האופטימיזציות
+
+**הודעות על פורטפוליוז:**
+- אם יש פורטפוליוז עם Base Bid='Ignore', המערכת תציג: "Ignored {n} portfolios marked as 'Ignore'"
+- אם כל הפורטפוליוז מסומנים כ-Ignore, המערכת תציג שגיאה: "All portfolios marked as 'Ignore' - cannot proceed"
+
+**הודעות התקדמות:**
+- בזמן עיבוד, המערכת תציג: "Processing {OptimizationName}..."
+- בסיום העיבוד, המערכת תציג: "{OptimizationName} optimization complete"
+
+**הודעות על גודל הקובץ:**
+- אם הקובץ גדול (מעל 10MB), המערכת תציג: "Large file detected - processing may take longer"
+- אם יש יותר מ-100,000 שורות, המערכת תציג Progress Bar עם אחוזי התקדמות
+
+## 10. לשוניות נוספות
+- **לשונית Portfolios:** אם קיימת בקובץ המקור, תועתק כמו שהיא לדאטה פריים (Working ו-Clean)

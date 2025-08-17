@@ -70,14 +70,33 @@ def validate_bulk_structure(df):
     
     return None
 ```
-
 ### בדיקות נתונים
-| שדה | בדיקה | ערך תקין | הודעה |
-|------|--------|-----------|---------|
-| Entity | ערכים תקינים | Keyword, Product Targeting, Bidding Adjustment, Campaign, Ad Group | Info only |
-| State | ערכים תקינים | enabled, paused, archived | Info only |
-| Bid | טווח | 0.02-1.25 | Warning: "{n} bids outside range" |
-| Budget | חיובי | > 0 | Warning: "Negative budgets found" |
+
+**בדיקת Entity:**
+- ערכים תקינים: `Keyword`, `Product Targeting`, `Product Ad`, `Bidding Adjustment`, `Campaign`, `Ad Group`
+- הודעה: Info only (המערכת לא דוחה, רק מסננת)
+
+**בדיקת State:**
+- ערכים תקינים: `enabled`, `paused`, `archived`
+- הודעה: Info only (המערכת לא דוחה, רק מסננת)
+
+**בדיקת Bid:**
+- טווח תקין: 0.02-1.25
+- הודעה: Warning - "{n} bids outside range"
+
+**בדיקת Budget:**
+- ערך תקין: חיובי (> 0)
+- הודעה: Warning - "Negative budgets found"
+
+### בדיקת Bidding Adjustment
+
+**קיום Bidding Adjustment:**
+- תנאי: 0 שורות עם Entity="Bidding Adjustment"
+- הודעה: Info - "Note: No Bidding Adjustment rows found"
+
+**ערכי Percentage:**
+- תנאי: Percentage < 0 או > 900
+- הודעה: Warning - "Unusual Percentage values detected"
 
 ### בדיקת Bidding Adjustment
 | בדיקה | תנאי | הודעה |
@@ -89,28 +108,43 @@ def validate_bulk_structure(df):
 
 ### תהליך הניקוי והשוואה
 ```python
-def clean_and_compare(bulk_df, template_df):
-    # 1. ניקוי Bulk
-    cleaned = bulk_df[
-        (bulk_df['Entity'].isin(['Keyword', 'Product Targeting', 'Bidding Adjustment'])) &
-        (bulk_df['State'] == 'enabled') &
-        (bulk_df['Campaign State (Informational only)'] == 'enabled') &
-        (bulk_df['Ad Group State (Informational only)'] == 'enabled')
-    ]
-    
-    # 2. חילוץ פורטפוליוז מ-Bulk
-    bulk_portfolios = cleaned['Portfolio Name (Informational only)'].unique()
-    
-    # 3. חילוץ פורטפוליוז מ-Template (ללא Ignore)
-    template_portfolios = template_df[
-        template_df['Base Bid'].str.lower() != 'ignore'
-    ]['Portfolio Name'].unique()
-    
-    # 4. השוואה
-    missing = set(bulk_portfolios) - set(template_portfolios)
-    
-    return missing
-```
+    def clean_and_compare(bulk_df, template_df):
+        # 1. ניקוי Bulk
+        # סינון לפי Entity - כולל Product Ad
+        entity_filter = bulk_df['Entity'].isin(['Keyword', 'Product Targeting', 'Product Ad', 'Bidding Adjustment'])
+        
+        # סינון לפי State - Bidding Adjustment לא מסונן
+        state_filter = (bulk_df['State'] == 'enabled') | (bulk_df['Entity'] == 'Bidding Adjustment')
+        
+        # סינון לפי Campaign State - Bidding Adjustment לא מסונן
+        campaign_state_filter = (bulk_df['Campaign State (Informational only)'] == 'enabled') | (bulk_df['Entity'] == 'Bidding Adjustment')
+        
+        # סינון לפי Ad Group State - Bidding Adjustment לא מסונן
+        ad_group_state_filter = (bulk_df['Ad Group State (Informational only)'] == 'enabled') | (bulk_df['Entity'] == 'Bidding Adjustment')
+        
+        # החלת כל הסינונים
+        cleaned = bulk_df[
+            entity_filter & 
+            state_filter & 
+            campaign_state_filter & 
+            ad_group_state_filter
+        ]
+        
+        # 2. חילוץ פורטפוליוז מ-Bulk
+        bulk_portfolios = cleaned['Portfolio Name (Informational only)'].unique()
+        
+        # 3. חילוץ פורטפוליוז מ-Template (ללא Ignore)
+        template_portfolios = template_df[
+            template_df['Base Bid'].str.lower() != 'ignore'
+        ]['Portfolio Name'].unique()
+        
+        # 4. השוואה
+        missing = set(bulk_portfolios) - set(template_portfolios)
+        
+        return missing
+
+
+
 
 ### תוצאות השוואה
 | תרחיש | תוצאה | הודעה |

@@ -18,7 +18,7 @@ bid-optimizer/
 
 ## מה המשתמש רואה
 - **ולידציה אמיתית:**
-  - סינון Bulk: רק Entity=Keyword/Product Targeting
+  - סינון Bulk: רק Entity=Keyword/Product Targeting/Product Ad/Bidding Adjustment
   - רק State=enabled
   - השוואת פורטפוליוז אמיתית
 - **מספרים אמיתיים:**

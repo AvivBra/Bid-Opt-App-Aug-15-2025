@@ -165,22 +165,24 @@ def validate_bulk_structure(df):
 אם כל הפורטפוליוז ב-Template מסומנים כ-"Ignore", המערכת מציגה "All portfolios marked as Ignore" וחוסמת המשך עיבוד.
 
 
-## 5. ולידציות אופטימיזציה
+## 5. ולידציות ספציפיות לאופטימיזציה
 
-### Zero Sales - לפני עיבוד
-| בדיקה | תנאי | הודעה |
-|--------|------|---------|
-| Units column exists | חסרה עמודת Units | Error: "Units column required for Zero Sales" |
-| Clicks column exists | חסרה עמודת Clicks | Error: "Clicks column required for Zero Sales" |
-| Percentage column exists | חסרה עמודת Percentage | Warning: "Percentage column missing - Max BA will default to 1" |
+### הערה חשובה
+הוולידציות הספציפיות לכל סוג אופטימיזציה מתבצעות בתוך מודול האופטימיזציה עצמו..
 
-### Zero Sales - אחרי עיבוד
-| בדיקה | תנאי | הודעה |
-|--------|------|---------|
-| Bid range check | Bid < 0.02 | Pink highlight + count in message |
-| Bid range check | Bid > 1.25 | Pink highlight + count in message |
-| Calculation errors | NaN or null in Bid | Pink highlight + count in message |
-| Final message | סיכום | "{X} rows below 0.02, {Y} rows above 1.25, {Z} rows with calculation errors" |
+### Zero Sales - ולידציות (מתבצעות בתוך optimization/zero_sales.py)
+
+#### ולידציות לפני עיבוד:
+- אם חסרה עמודת Units, המערכת מציגה שגיאה: "Units column required for Zero Sales optimization"
+- אם חסרה עמודת Clicks, המערכת מציגה שגיאה: "Clicks column required for Zero Sales optimization"  
+- אם חסרה עמודת Percentage, המערכת מציגה אזהרה: "Percentage column missing - Max BA will default to 1" ומגדירה ערך ברירת מחדל 1
+
+#### ולידציות אחרי עיבוד:
+- שורות עם Bid מתחת ל-0.02 מסומנות בורוד ונספרות
+- שורות עם Bid מעל 1.25 מסומנות בורוד ונספרות
+- שורות עם שגיאת חישוב (NaN או null) מסומנות בורוד ונספרות
+- הודעה מסכמת למשתמש: "{X} rows below 0.02, {Y} rows above 1.25, {Z} rows with calculation errors"
+
 
 ## 6. ולידציות קבצי פלט
 

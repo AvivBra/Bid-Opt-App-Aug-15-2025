@@ -62,48 +62,34 @@ DataFrame (3 cols)            DataFrame (46 cols)
             Session State
 ```
 
-### Step 2: VALIDATION
-```
-         Session State
-                │
-    ┌───────────┼───────────┐
-    ▼           ▼           ▼
-Check       Clean       Extract
-Headers     Bulk        Portfolios
-    │           │           │
-    │      Filter by:       │
-    │      - Entity         │
-    │      - State          │
-    │           │           │
-    └───────────┼───────────┘
-                ▼
-         Compare Lists
-                │
-         ┌──────┴──────┐
-         ▼             ▼
-    All Match     Missing Found
-         │             │
-         │             ▼
-         │         Show Error
-         │         Request Fix
-         ▼
-    Ready to Process
+### Step 2: OPTIMIZATION SELECTION
+
+User Selects Optimizations
+        │
+┌───────┴────────┐
+│  Optimization  │
+│   Checklist    │
+└───────┬────────┘
+        │
+Selected: [Zero Sales, ...]
+        │
+        ▼
+Ready for Processing
+
 ```
 
 ### Step 3: PROCESSING
 ```
-    Cleaned Bulk DataFrame
+            Each Optimization
             │
+    ┌───────┴────────┐
+    │ 1. Validate    │ ← ולידציות ספציפיות לאופטימיזציה
+    │ 2. Filter data │
+    │ 3. Apply logic │
+    │ 4. Update bids │
+    └───────┬────────┘
             ▼
-    For Each Selected Optimization:
-    ┌─────────────────────┐
-    │ 1. Read current data│
-    │ 2. Apply logic      │
-    │ 3. Update values    │
-    │ 4. Track changes    │
-    └──────────┬──────────┘
-               ▼
-        Modified DataFrame
+    Modified DataFrame
                │
         ┌──────┴──────┐
         ▼             ▼

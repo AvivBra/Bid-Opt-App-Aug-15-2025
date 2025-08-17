@@ -91,7 +91,7 @@ Supplements-EU   | 2.10     | 8.50
 48. ROAS
 ```
 
-### סינון אוטומטי (Bulk Cleaning)
+### סינון לאופטימיזציית zero sales (Bulk Cleaning)
 
 #### שלב 1: סינון והפרדה
 מהלשונית "Sponsored Products Campaigns":
@@ -102,7 +102,7 @@ Supplements-EU   | 2.10     | 8.50
   2. **Product Ads** - Product Ad בלבד
   3. **Bidding Adjustments** - Bidding Adjustment בלבד
 
-  
+
 #### שלב 2: ניקוי נוסף
 רק בלשוניות Targets ו-Product Ads (לא ב-Bidding Adjustments):- מוחקים שורות שאינן enabled בכל 3 העמודות:
   - State = "enabled"
@@ -111,6 +111,10 @@ Supplements-EU   | 2.10     | 8.50
 
 #### לשוניות נוספות
 - לשונית **Portfolios** (אם קיימת) - נשמרת כמו שהיא
+
+
+#### אופטימיזציות אחרות:
+כל אופטימיזציה מגדירה את כללי הסינון שלה - יוגדר כשנעבור לפיתוח אופטימיזציות אחרות
 
 ## 3. Working File - פלט
 

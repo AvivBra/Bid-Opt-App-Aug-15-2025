@@ -321,3 +321,17 @@ def test_error_propagation():
     assert not result['success']
     assert 'FILE_002' in result['errors'][0].code
 ```
+
+
+### הודעות שגיאה ספציפיות לאופטימיזציות
+
+#### Zero Sales
+
+❌ Units column required for Zero Sales optimization
+❌ Clicks column required for Zero Sales optimization
+⚠️ Percentage column missing - Max BA will default to 1
+ℹ️ Note: No Bidding Adjustment rows found
+✓ Zero Sales optimization completed: {X} rows optimized
+
+#### אופטימיזציות אחרות
+כל אופטימיזציה מגדירה את הודעות השגיאה שלה בתוך המודול שלה.

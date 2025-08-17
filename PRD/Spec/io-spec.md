@@ -91,111 +91,15 @@ Supplements-EU   | 2.10     | 8.50
 48. ROAS
 ```
 
-### סינון לאופטימיזציית zero sales (Bulk Cleaning)
-
-#### שלב 1: סינון והפרדה
-מהלשונית "Sponsored Products Campaigns":
-- משאירים רק שורות עם Entity = "Keyword" או "Product Targeting" או "Product Ad" או "Bidding Adjustment"
-
-- מפרידים ל-3 לשוניות:
-  1. **Targets** - Keyword + Product Targeting
-  2. **Product Ads** - Product Ad בלבד
-  3. **Bidding Adjustments** - Bidding Adjustment בלבד
+### 2.5 סינון וניקוי - מתבצע בתוך כל אופטימיזציה בנפרד
+הקובץ נקרא במלואו עם כל 48 העמודות וכל השורות. **לא מתבצע סינון או ניקוי גלובלי**. הנתונים מועברים כמו שהם לאופטימיזציות שנבחרו.
 
 
-#### שלב 2: ניקוי נוסף
-רק בלשוניות Targets ו-Product Ads (לא ב-Bidding Adjustments):- מוחקים שורות שאינן enabled בכל 3 העמודות:
-  - State = "enabled"
-  - Campaign State (Informational only) = "enabled"
-  - Ad Group State (Informational only) = "enabled"
-
-#### לשוניות נוספות
-- לשונית **Portfolios** (אם קיימת) - נשמרת כמו שהיא
+#### דוגמה: סינון וניקוי באופטימיזציית Zero Sales
 
 
-#### אופטימיזציות אחרות:
-כל אופטימיזציה מגדירה את כללי הסינון שלה - יוגדר כשנעבור לפיתוח אופטימיזציות אחרות
-
-## 3. Working File - פלט
-
-### מבנה
-- **פורמט:** Excel (.xlsx) בלבד
-- **שם קובץ:** `Auto Optimized Bulk | Working | YYYY-MM-DD | HH-MM.xlsx`
-- **דוגמה:** `Auto Optimized Bulk | Working | 2024-01-15 | 14-30.xlsx`
-
-### Sheets
-לכל אופטימיזציה שנבחרה:
-
-### Sheets
-לכל אופטימיזציה שנבחרה:
-
-**Zero Sales - 4 sheets:**
-1. `Clean Zero Sales` - Keywords/Product Targeting בלבד עם עמודות עזר
-2. `Product Ad Zero Sales` - Product Ad בלבד
-3. `Bidding Adjustment Zero Sales` - Bidding Adjustments בלבד
-4. `Working Zero Sales` - זהה ל-Clean (שמור לעתיד)
-
-**אופטימיזציות אחרות - 4 sheets לכל אחת:**
-1. `Clean {OptimizationName}` - Keywords/Product Targeting בלבד
-2. `Product Ad {OptimizationName}` - Product Ad בלבד  
-3. `Bidding Adjustment {OptimizationName}` - Bidding Adjustments בלבד
-4. `Working {OptimizationName}`
-
-### עמודות עזר (Zero Sales בלבד)
-מוספות משמאל לעמודה Bid (רק בלשונית הראשית):
-- Max BA
-- Base Bid
-- Target CPA
-- Adj. CPA
-- Old Bid
-- calc1
-- calc2
-
-### תוכן
-- **Clean sheets:** 48 עמודות מקוריות + עמודות עזר (באופטימיזציות רלוונטיות)
-- **Working sheets:** זהה ל-Clean (בגרסה עתידית יכלול עמודות נוספות)
-- **Bidding Adjustment sheets:** 48 עמודות מקוריות בלבד, ללא עמודות עזר
-- **כל השורות:** Operation = "Update"
-
-### סימון שגיאות
-- שורות עם Bid < 0.02 או Bid > 1.25 מסומנות בצבע ורוד
-- שורות עם שגיאת חישוב מסומנות בצבע ורוד
-
-## 4. Clean File - פלט
-
-### מבנה
-- **פורמט:** Excel (.xlsx) בלבד
-- **שם קובץ:** `Auto Optimized Bulk | Clean | YYYY-MM-DD | HH-MM.xlsx`
-- **דוגמה:** `Auto Optimized Bulk | Clean | 2024-01-15 | 14-30.xlsx`
-
-### Sheets
-לכל אופטימיזציה שנבחרה:
-
-**Zero Sales - 3 sheets:**
-1. `Clean Zero Sales` - Keywords/Product Targeting בלבד עם עמודות עזר
-2. `Product Ad Zero Sales` - Product Ad בלבד
-3. `Bidding Adjustment Zero Sales` - Bidding Adjustments בלבד
-
-**אופטימיזציות אחרות - 3 sheets לכל אחת:**
-1. `Clean {OptimizationName}` - Keywords/Product Targeting בלבד
-2. `Product Ad {OptimizationName}` - Product Ad בלבד
-3. `Bidding Adjustment {OptimizationName}` - Bidding Adjustments בלבד
-
-### תוכן
-- זהה לWorking File (כרגע)
-- בעתיד: ללא עמודות עזר
-
-## 5. Empty Template - להורדה
-
-### מבנה
-```
-Portfolio Name | Base Bid | Target CPA
----------------|----------|------------
-               |          |
-```
-- 3 עמודות
-- 0 שורות נתונים
-- רק כותרות
+## 3. פלט
+לכל אופטימיזצייה יש את איפיון הפלט שלה.
 
 ## 6. פורמט נתונים
 
